@@ -1,5 +1,5 @@
-./central/mix.lock
-./central/.elixir_ls
+central/mix.lock
+central/.elixir_ls
 .env
-./central/_build/
-./central/deps/
+central/_build/
+central/deps/
