@@ -3,3 +3,4 @@ central/.elixir_ls
 .env
 central/_build/
 central/deps/
+central/erl_crash.dump
