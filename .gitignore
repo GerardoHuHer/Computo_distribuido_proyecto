@@ -4,3 +4,6 @@ central/.elixir_ls
 central/_build/
 central/deps/
 central/erl_crash.dump
+
+central_front/node_modules
+
