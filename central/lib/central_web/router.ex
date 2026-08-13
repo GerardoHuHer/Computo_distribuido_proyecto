@@ -8,7 +8,12 @@ defmodule CentralWeb.Router do
   scope "/api", CentralWeb do
     pipe_through :api
 
-    post "/create_rover", Rover, :create_rover
+    # Enpoints para el rover, comunican con el controlador
+    post "/create_rover", Rover, :create
+    post "/add_mejora", Rover, :add_mejora
+
+    # Endpoints eventos
+    post "/create_evento", EventosOpciones, :create
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
