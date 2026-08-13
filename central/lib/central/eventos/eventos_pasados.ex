@@ -16,13 +16,11 @@ defmodule Central.Eventos.EventosPasados do
     timestamps()
   end
 
-  # Corregido typo: changeset (con 'n')
   def changeset(eventos_pasados, attrs) do
     eventos_pasados
     |> cast(attrs, [
       :rover_position_x,
       :rover_position_y,
-      # Corregido a singular
       :timestamp,
       :id_rover,
       :id_evento
