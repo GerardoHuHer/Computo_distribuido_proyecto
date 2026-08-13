@@ -1,14 +1,14 @@
-defmodule CentralWeb.Rover do
+defmodule CentralWeb.RoverMejora do
   use CentralWeb, :controller
 
-  alias Central.Rover
+  alias Central.RoverMejora
 
-  def create(conn, %{"data" => rover_params}) do
-    case Rover.create_rover(rover_params) do
-      {:ok, rover} ->
+  def add_mejora(conn, %{"data" => mejora_paras}) do
+    case RoverMejora.add_mejora(mejora_paras) do
+      {:ok, mejora} ->
         conn
         |> put_status(:created)
-        |> render(:show, rover: rover)
+        |> render(:show, mejora: mejora)
 
       {:error, changeset} ->
         conn
