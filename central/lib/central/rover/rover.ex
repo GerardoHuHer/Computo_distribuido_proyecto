@@ -11,7 +11,7 @@ defmodule Central.Rover.Rover do
     field :timestamp, :utc_datetime
 
     # Conexión con mejoras.
-    has_many :rover_mejoras, Central.Rover.RoverMejoras, foreign_key: :id_rover
+    has_many :rover_mejora, Central.Rover.RoverMejora, foreign_key: :id_rover
     timestamps()
   end
 
