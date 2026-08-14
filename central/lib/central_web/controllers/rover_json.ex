@@ -1,4 +1,4 @@
-defmodule CentralWeb.RoverJson do
+defmodule CentralWeb.RoverJSON do
   alias Central.Rover.Rover
 
   def show(%{rover: rover}) do
