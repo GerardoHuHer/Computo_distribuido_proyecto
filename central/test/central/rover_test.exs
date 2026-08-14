@@ -1,7 +1,6 @@
 defmodule Central.RoverTest do
   use Central.DataCase, async: true
 
-  alias Central.Rover
   alias Central.Rover.Rover
 
   describe "rover" do
@@ -16,13 +15,13 @@ defmodule Central.RoverTest do
     }
 
     test "create/1 rover con datos válidos para crear un rover" do
-      assert {:ok, %Rover{} = rover} = Rover.create(@valid_attrs)
+      assert {:ok, %Rover{} = rover} = Central.Rover.create_rover(@valid_attrs)
       assert rover.pos_x == 10
       assert rover.pos_y == 20
     end
 
     test "create/1 rover con datos inválidos para crear un rover" do
-      assert {:error, %Ecto.Changeset{} = changeset} = Rover.create(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{} = changeset} = Central.Rover.create_rover(@invalid_attrs)
       refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).pos_x
       assert "can't be blank" in errors_on(changeset).pos_y
