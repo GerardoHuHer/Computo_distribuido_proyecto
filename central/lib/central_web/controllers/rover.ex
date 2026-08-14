@@ -29,6 +29,14 @@ defmodule CentralWeb.Rover do
     end
   end
 
+  def get_all_rovers_controller(conn, _params) do
+    rovers = Rover.get_all_rovers()
+
+    conn
+    |> put_status(:ok)
+    |> render(:index, rovers: rovers)
+  end
+
   def move_rover_controller(conn, %{"id" => id, "data" => params}) do
     with {:ok, rover} <- fetch_rover(id),
          {:ok, updated_rover} <- Rover.update_rover(rover, params) do
