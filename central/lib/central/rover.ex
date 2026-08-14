@@ -20,7 +20,7 @@ defmodule Central.Rover do
     |> Repo.update()
   end
 
-  def delete_rover(id) do
-    Repo.delete(id)
+  def delete_rover(rover) do
+    Repo.delete(rover)
   end
 end
