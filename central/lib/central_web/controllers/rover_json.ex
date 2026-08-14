@@ -5,6 +5,10 @@ defmodule CentralWeb.RoverJSON do
     %{data: data(rover)}
   end
 
+  def index(%{rovers: list}) when is_list(list) do
+    %{data: for(rover <- list, do: data(rover))}
+  end
+
   def error(%{changeset: changeset}) do
     %{errors: Ecto.Changeset.traverse_errors(changeset, &translate_error/1)}
   end
