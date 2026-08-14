@@ -1,4 +1,4 @@
-defmodule CentralWeb.RoverMejoraJson do
+defmodule CentralWeb.RoverMejoraJSON do
   # 
   alias Central.Rover.RoverMejora
 
