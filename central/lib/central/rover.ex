@@ -14,6 +14,10 @@ defmodule Central.Rover do
     Repo.get(Rover, id)
   end
 
+  def get_all_rovers() do
+    Repo.all(Rover)
+  end
+
   def update_rover(%Rover{} = rover, attrs) do
     rover
     |> Rover.changeset(attrs)
