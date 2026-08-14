@@ -49,9 +49,9 @@ defmodule CentralWeb.Rover do
   end
 
   def delete_rover_controller(conn, %{"id" => id}) do
-    with {:ok, _} <- fetch_rover(id),
+    with {:ok, rover} <- fetch_rover(id),
          {:ok, _} <-
-           Rover.delete_rover(id) do
+           Rover.delete_rover(rover) do
       conn
       |> put_status(:ok)
       |> json(%{msg: "Rover #{id} lost connection"})
@@ -60,6 +60,8 @@ defmodule CentralWeb.Rover do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Rover #{id} not found"})
+
+        conn
 
       {:error, changeset} ->
         conn
