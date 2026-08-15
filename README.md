@@ -2,12 +2,11 @@
 ---
 
 ## Unit Test del backend
-1. Ejecutar contenedores
+- Ejecutar contenedores
 ```
-docker compose up db backend
+docker compose up --build
 ```
-2. Ejecutar test
-
+- Ejecutar test
 ```
-docker compose exec -e MIX_ENV=test -e DB_HOST=db backend mix test
+docker compose run --rm test
 ```
