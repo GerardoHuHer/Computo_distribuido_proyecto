@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:18-alpine
+    container_name: postgres_central
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -14,6 +15,7 @@ services:
       retries: 5
 
   backend:
+    container_name: backend_central
     build:
       context: ./central/
       dockerfile: Dockerfile
@@ -44,6 +46,7 @@ services:
     profiles: ["test"]
 
   frontend:
+    container_name: frontend_central
     build:
       context: ./central_front/
       dockerfile: Dockerfile
