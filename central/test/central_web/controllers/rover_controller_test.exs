@@ -53,6 +53,23 @@ defmodule CentralWeb.RoverControllerTest do
       conn = patch(conn, ~p"/api/move_rover/#{rover.id}", data: %{pos_x: 1})
       assert json_response(conn, 200)["data"]["pos_x"] == 1
     end
+
+    test "test con HTTP 404 en caso de que el rover que se quiere modificar no exista", %{
+      conn: conn
+    } do
+      {:ok, rover} = Central.Rover.create_rover(@valid_attrs)
+      Central.Rover.delete_rover(rover)
+
+      conn = patch(conn, ~p"/api/move_rover/#{rover.id}", data: %{pos_x: 1})
+      assert json_response(conn, 404) == %{"error" => "Rover not found"}
+    end
+
+    test "test en caso que de que haya un error en el changeset", %{conn: conn} do
+      {:ok, rover} = Central.Rover.create_rover(@valid_attrs)
+
+      conn = patch(conn, ~p"/api/move_rover/#{rover.id}", data: @invalid_attrs)
+      assert json_response(conn, 422)["errors"] != %{}
+    end
   end
 
   describe "DELETE /api/delete_rover/:id" do
@@ -61,6 +78,14 @@ defmodule CentralWeb.RoverControllerTest do
       conn = delete(conn, ~p"/api/delete_rover/#{rover.id}")
       assert json_response(conn, 200) == %{"msg" => "Rover #{rover.id} lost connection"}
       assert Central.Rover.get_rover(rover.id) == nil
+    end
+
+    test "Eliminar con con http 404 un rover que no existe", %{conn: conn} do
+      {:ok, rover} = Central.Rover.create_rover(@valid_attrs)
+      Central.Rover.delete_rover(rover)
+
+      conn = delete(conn, ~p"/api/delete_rover/#{rover.id}")
+      assert json_response(conn, 404) == %{"error" => "Rover #{rover.id} not found"}
     end
   end
 end
