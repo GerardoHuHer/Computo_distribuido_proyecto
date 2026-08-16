@@ -44,6 +44,14 @@ defmodule CentralWeb.RoverControllerTest do
 
       assert json_response(conn, 200)["data"]["id"] == rover.id
     end
+
+    test "test con HTTP 404 para buscar un rover que no existe", %{conn: conn} do
+      {:ok, rover} = Central.Rover.create_rover(@valid_attrs)
+      Central.Rover.delete_rover(rover)
+
+      conn = get(conn, ~p"/api/get_rover/#{rover.id}")
+      assert json_response(conn, 404) == %{"error" => "Rover not found"}
+    end
   end
 
   describe "UPDATE /api/move_rover/:id" do
@@ -86,6 +94,29 @@ defmodule CentralWeb.RoverControllerTest do
 
       conn = delete(conn, ~p"/api/delete_rover/#{rover.id}")
       assert json_response(conn, 404) == %{"error" => "Rover #{rover.id} not found"}
+    end
+  end
+
+  describe "GET /api/get_all_rovers" do
+    test "Traer todos los rovers con HTTP 200 con al menos un elemento", %{conn: conn} do
+      {:ok, rover} = Central.Rover.create_rover(@valid_attrs)
+      conn = get(conn, ~p"/api/get_all_rovers")
+
+      assert json_response(conn, 200)["data"] == [
+               %{
+                 "id" => rover.id,
+                 "pos_x" => rover.pos_x,
+                 "pos_y" => rover.pos_y
+               }
+             ]
+
+      assert Enum.count(json_response(conn, 200)["data"]) != 0
+    end
+
+    test "Traer todos los rovers con HTTP 200 sin elementos", %{conn: conn} do
+      conn = get(conn, ~p"/api/get_all_rovers")
+      assert json_response(conn, 200)["data"] == []
+      assert Enum.count(json_response(conn, 200)["data"]) == 0
     end
   end
 end
