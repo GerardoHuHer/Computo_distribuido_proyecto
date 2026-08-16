@@ -68,13 +68,6 @@ defmodule CentralWeb.Rover do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Rover #{id} not found"})
-
-        conn
-
-      {:error, changeset} ->
-        conn
-        |> put_status(:not_found)
-        |> render(:error, changeset: changeset)
     end
   end
 
