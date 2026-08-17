@@ -8,3 +8,11 @@ central/erl_crash.dump
 central_front/node_modules
 
 erl_crash.dump
+
+rover/mix.lock
+rover/.elixir_ls
+rover/_build/
+rover/deps/
+rover/erl_crash.dump
+
+
