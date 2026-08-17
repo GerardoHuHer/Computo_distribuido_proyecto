@@ -1,5 +1,9 @@
 services:
-  db:
+  # ----------------------------------------------------
+  # Central
+  # ----------------------------------------------------
+  
+  db_central:
     image: postgres:18-alpine
     container_name: postgres_central
     environment:
@@ -14,7 +18,7 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  backend_central:
     container_name: backend_central
     build:
       context: ./central/
@@ -22,7 +26,7 @@ services:
     ports:
       - "4000:4000"
     depends_on:
-      db:
+      db_central:
         condition: service_healthy
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -30,7 +34,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - DB_HOST=db
 
-  test: 
+  test_central: 
     build: 
       context: ./central/
       dockerfile: Dockerfile
@@ -45,6 +49,60 @@ services:
       - DB_HOST=db
     profiles: ["test"]
 
+  # ----------------------------------------------------
+  # Vehiculo
+  # ----------------------------------------------------
+    
+  db_vehiculo:
+    image: postgres:18-alpine
+    container_name: postgres_vehiculo
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend_vehiculo: 
+    container_name: backend_vehiculo
+    build:
+      context: ./central/
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    depends_on:
+      db_vehiculo:
+        condition: service_healthy
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - DB_HOST=db
+
+  test_vehiculo: 
+    build: 
+      context: ./rover/
+      dockerfile: Dockerfile
+    command: ["mix", "test"]
+    depends_on: 
+      db: 
+        condition: service_healthy
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - DB_HOST=db
+    profiles: ["test"]
+
+  # ----------------------------------------------------
+  # Frontend 
+  # ----------------------------------------------------
+  
   frontend:
     container_name: frontend_central
     build:
