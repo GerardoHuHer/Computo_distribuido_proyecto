@@ -1,6 +1,4 @@
 defmodule RoverWeb.Router do
-  alias Rover.Eventos
-  alias Rover.Vehiculo
   use RoverWeb, :router
 
   pipeline :api do
