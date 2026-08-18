@@ -1,18 +1,20 @@
+NimbleCSV.define(MyParser, separator: ",", escape: "\"")
+
 defmodule RoverWeb.Eventos do
   use RoverWeb, :controller
   alias Rover.Eventos
 
-  @path ""
-  @cantidad_registros 10
+  @path Path.join(File.cwd!(), "eventos.csv")
+  @cantidad_registros 100
 
   def load_eventos_db_controller(conn, _params) do
     data = load_data_from_csv(@path)
 
     case Eventos.post_all_data(data) do
-      {:ok, _response} ->
+      {:ok, cantidad} ->
         conn
         |> put_status(:ok)
-        |> json_response(%{"msg" => "Se han añadido los eventos con éxito"})
+        |> json(%{"msg" => "Se han añadido los #{cantidad} eventos con éxito"})
 
       {:error, changeset} ->
         conn
@@ -24,27 +26,37 @@ defmodule RoverWeb.Eventos do
   def get_evento_random_controller(conn, _params) do
     random_id = :rand.uniform(@cantidad_registros - 1)
 
-    case get_evento_random(random_id) do
+    case Eventos.get_evento_random(random_id) do
       {:ok, evento} ->
         conn
         |> put_status(:ok)
         |> render(:show, evento: evento)
 
-      {:error, error} ->
+      {:error, _error} ->
         conn
         |> put_status(:not_found)
-        |> json(conn, %{msg: "Id inválido, no existe"})
+        |> json(%{msg: "Id inválido, no existe"})
     end
   end
 
   defp load_data_from_csv(path) do
-    NimbleCSV.define(MyParser, separator: ",", escape: "\"")
+    now =
+      NaiveDateTime.utc_now()
+      |> NaiveDateTime.truncate(:second)
 
     data =
       path
       |> File.stream!()
       |> MyParser.parse_stream()
-      |> Enum.to_list()
+      |> Stream.drop(1)
+      |> Enum.map(fn [name, description] ->
+        %{
+          name: name,
+          description: description,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
 
     data
   end
