@@ -3,19 +3,12 @@ defmodule Rover.Eventos do
   alias Rover.Repo
   alias Rover.Eventos.Eventos
 
-  # Alternativa 
-  # Repo.insert_all
-  def post_all_data(list \\ []) do
-    Repo.transaction(fn ->
-      Enum.each(list, fn i ->
-        i
-        |> Eventos.changeset()
-        |> Repo.insert!()
-      end)
-    end)
+  def post_all_data(list \\ []) when is_list(list) do
+    {count, _} = Repo.insert_all(Rover.Eventos.Eventos, list)
+    {:ok, count}
   rescue
-    e in Ecto.InvalidChangesetError ->
-      {:error, e.changeset}
+    e in Postgrex.Error ->
+      {:error, e.postgres.message}
   end
 
   def get_evento_random(id) do
