@@ -1,14 +1,14 @@
 import Config
 
 # Configure your database
-config :rover, Rover.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "rover_dev",
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+# config :rover, Rover.Repo,
+#  username: "postgres",
+#  password: "postgres",
+#  hostname: "localhost",
+#  database: "rover_dev",
+#  stacktrace: true,
+#  show_sensitive_data_on_connection_error: true,
+#  pool_size: 10
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
