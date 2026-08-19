@@ -22,6 +22,12 @@ end
 
 config :rover, RoverWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+config :rover, Rover.Repo,
+  username: System.get_env("ROVER1_POSTGRES_USER") || "user",
+  password: System.get_env("ROVER1_POSTGRES_PASSWORD") || "password",
+  hostname: System.get_env("ROVER1_DB_HOST") || "db_rover1",
+  database: System.get_env("ROVER1_POSTGRES_DB") || "db_rover1"
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
