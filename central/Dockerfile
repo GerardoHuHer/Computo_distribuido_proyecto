@@ -19,4 +19,4 @@ COPY . .
 
 EXPOSE 4000
 
-CMD ["mix", "phx.server"]
+CMD ["./entrypoint.sh"]
