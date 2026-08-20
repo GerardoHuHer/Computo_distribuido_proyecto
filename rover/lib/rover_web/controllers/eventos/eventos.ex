@@ -27,15 +27,15 @@ defmodule RoverWeb.Eventos do
     random_id = :rand.uniform(@cantidad_registros - 1)
 
     case Eventos.get_evento_random(random_id) do
-      {:ok, evento} ->
-        conn
-        |> put_status(:ok)
-        |> render(:show, evento: evento)
-
-      {:error, _error} ->
+      nil ->
         conn
         |> put_status(:not_found)
         |> json(%{msg: "Id inválido, no existe"})
+
+      evento ->
+        conn
+        |> put_status(:ok)
+        |> render(:show, evento: evento)
     end
   end
 

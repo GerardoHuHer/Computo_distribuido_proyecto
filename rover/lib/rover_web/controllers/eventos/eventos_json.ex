@@ -1,4 +1,4 @@
-defmodule RoverWeb.Eventos.EventosJSON do
+defmodule RoverWeb.EventosJSON do
   alias Rover.Eventos.EventosOpciones
 
   def show(%{evento: evento}), do: %{data: data(evento)}
