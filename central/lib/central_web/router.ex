@@ -7,19 +7,6 @@ defmodule CentralWeb.Router do
 
   scope "/api", CentralWeb do
     pipe_through(:api)
-
-    # Enpoints para el rover, comunican con el controlador
-    post("/create_rover", Rover, :create)
-    get("/get_rover/:id", Rover, :get_rover)
-    get("/get_all_rovers/", Rover, :get_all_rovers_controller)
-    patch("/move_rover/:id", Rover, :move_rover_controller)
-    delete("/delete_rover/:id", Rover, :delete_rover_controller)
-
-    # Rover mejoras
-    post("/add_mejora", Rover, :add_mejora)
-
-    # Endpoints eventos
-    post("/create_evento", EventosOpciones, :create)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
