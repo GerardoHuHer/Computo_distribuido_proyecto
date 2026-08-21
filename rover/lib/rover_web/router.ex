@@ -10,6 +10,13 @@ defmodule RoverWeb.Router do
 
     get "/load_eventos_db", Eventos, :load_eventos_db_controller
     get "/get_evento_random", Eventos, :get_evento_random_controller
+
+    # Rover
+    post("/create_vehiculo", Vehiculo, :create)
+    get("/get_vehiculo/:id", Vehiculo, :get_vehiculo)
+    get("/get_all_vehiculos/", Vehiculo, :get_all_vehiculos_controller)
+    patch("/move_vehiculo/:id", Vehiculo, :move_vehiculo_controller)
+    delete("/delete_vehiculo/:id", Vehiculo, :delete_vehiculo_controller)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
