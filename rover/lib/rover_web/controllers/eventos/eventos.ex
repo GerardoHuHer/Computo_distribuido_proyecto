@@ -14,7 +14,7 @@ defmodule RoverWeb.Eventos do
       {:ok, cantidad} ->
         conn
         |> put_status(:ok)
-        |> json(%{"msg" => "Se han añadido los #{cantidad} eventos con éxito"})
+        |> json(%{"msg" => "Se han añadido los #{cantidad + 1} eventos con éxito"})
 
       {:error, changeset} ->
         conn
