@@ -5,7 +5,7 @@ defmodule Rover.Vehiculo.Vehiculo do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "Vehiculo" do
+  schema "vehiculo" do
     field :pos_x, :integer, default: 0
     field :pos_y, :integer, default: 0
     field :timestamp, :utc_datetime
