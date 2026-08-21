@@ -2,7 +2,6 @@ services:
   # ----------------------------------------------------
   # Central
   # ----------------------------------------------------
-  
   db_central:
     image: postgres:18-alpine
     container_name: postgres_central
@@ -52,7 +51,6 @@ services:
   # ----------------------------------------------------
   # Vehiculo
   # ----------------------------------------------------
-    
   db_vehiculo1:
     image: postgres:18-alpine
     container_name: postgres_vehiculo1
@@ -102,7 +100,6 @@ services:
   # ----------------------------------------------------
   # Frontend 
   # ----------------------------------------------------
-  
   frontend:
     container_name: frontend_central
     build:
