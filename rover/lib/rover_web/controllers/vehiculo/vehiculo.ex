@@ -17,7 +17,7 @@ defmodule RoverWeb.Vehiculo do
     end
   end
 
-  def get_rover(conn, %{"id" => id}) do
+  def get_vehiculo(conn, %{"id" => id}) do
     case Vehiculo.get_vehiculo(id) do
       nil ->
         conn
@@ -29,7 +29,7 @@ defmodule RoverWeb.Vehiculo do
     end
   end
 
-  def get_all_rovers_controller(conn, _params) do
+  def get_all_vehiculos_controller(conn, _params) do
     rovers = Vehiculo.get_all_vehiculos()
 
     conn
@@ -37,7 +37,7 @@ defmodule RoverWeb.Vehiculo do
     |> render(:index, rovers: rovers)
   end
 
-  def move_rover_controller(conn, %{"id" => id, "data" => params}) do
+  def move_vehiculo_controller(conn, %{"id" => id, "data" => params}) do
     with {:ok, rover} <- fetch_rover(id),
          {:ok, updated_rover} <- Vehiculo.update_vehiculo(rover, params) do
       conn
@@ -56,7 +56,7 @@ defmodule RoverWeb.Vehiculo do
     end
   end
 
-  def delete_rover_controller(conn, %{"id" => id}) do
+  def delete_vehiculo_controller(conn, %{"id" => id}) do
     with {:ok, rover} <- fetch_rover(id),
          {:ok, _} <-
            Vehiculo.delete_vehiculo(rover) do
