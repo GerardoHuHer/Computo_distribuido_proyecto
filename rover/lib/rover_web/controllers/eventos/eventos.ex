@@ -1,5 +1,3 @@
-NimbleCSV.define(MyParser, separator: ",", escape: "\"")
-
 defmodule RoverWeb.Eventos do
   use RoverWeb, :controller
   alias Rover.Eventos
