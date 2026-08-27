@@ -17,9 +17,11 @@ defmodule Middleware.RequestQueue do
   defp procesar(%{"type" => type, "action" => action, "params" => params}) do
     prefijo = "backend_#{type}"
 
+    modulo = modulo_para(type)
+
     case buscar_nodo(prefijo) do
       {:ok, nodo} ->
-        case :rpc.call(nodo, RpcHandler, :handle_request, [action, params], 5000) do
+        case :rpc.call(nodo, modulo, :handle_request, [action, params], 5000) do
           {:badrpc, reason} -> {:error, {:badrpc, reason}}
           resultado -> resultado
         end
@@ -36,6 +38,15 @@ defmodule Middleware.RequestQueue do
     |> case do
       [] -> {:error, :no_nodes}
       [nodo | _resto] -> {:ok, nodo}
+    end
+  end
+
+  defp modulo_para(tipo) do
+    case tipo do
+      "rover" -> RoverWeb.RpcHandler
+      "clima" -> ClimaWeb.RpcHandler
+      "central" -> CentralWeb.RpcHandler
+      _ -> nil
     end
   end
 end
