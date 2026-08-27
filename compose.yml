@@ -120,9 +120,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${MIDDLEWARE_PORT}:4000"
-    depends_on:
-      db_middleware:
-        condition: service_healthy
+   # depends_on:
+   #   db_middleware:
+   #     condition: service_healthy
     environment:
       - POSTGRES_PASSWORD=${MIDDLEWARE_PASSWORD}
       - POSTGRES_USER=${MIDDLEWARE_USER}
