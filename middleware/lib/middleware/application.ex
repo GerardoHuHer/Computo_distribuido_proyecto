@@ -13,7 +13,7 @@ defmodule Middleware.Application do
       {Cluster.Supervisor, [topologies, [name: Middleware.ClusterSupervisor]]},
       Middleware.RequestQueue,
       MiddlewareWeb.Telemetry,
-      Middleware.Repo,
+      #Middleware.Repo,
       {DNSCluster, query: Application.get_env(:middleware, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Middleware.PubSub},
       # Start a worker by calling: Middleware.Worker.start_link(arg)
