@@ -23,6 +23,12 @@ end
 config :middleware, MiddlewareWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+config :middleware, Central.Repo,
+  username: System.get_env("POSTGRES_USER") || "user",
+  password: System.get_env("POSTGRES_PASSWORD") || "password",
+  hostname: System.get_env("DB_HOST") || "db",
+  database: System.get_env("POSTGRES_DB") || "db"
+
 config :libcluster,
   topologies: [
     middleware_cluster: [

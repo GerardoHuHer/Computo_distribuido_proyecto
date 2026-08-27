@@ -1,14 +1,14 @@
 import Config
 
 # Configure your database
-config :middleware, Middleware.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "middleware_dev",
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+# config :middleware, Middleware.Repo,
+#  username: "postgres",
+#  password: "postgres",
+#  hostname: "localhost",
+#  database: "middleware_dev",
+#  stacktrace: true,
+#  show_sensitive_data_on_connection_error: true,
+#  pool_size: 10
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -19,7 +19,7 @@ config :middleware, Middleware.Repo,
 config :middleware, MiddlewareWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}],
+  http: [ip: {0, 0, 0, 0}],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
