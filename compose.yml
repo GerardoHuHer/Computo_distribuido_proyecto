@@ -81,6 +81,7 @@ services:
       - ROVER1_POSTGRES_USER=${ROVER1_POSTGRES_USER}
       - ROVER1_POSTGRES_DB=${ROVER1_POSTGRES_DB}
       - ROVER1_DB_HOST=${ROVER1_DB_HOST}
+      - RELEASE_COOKIE=${RELEASE_COOKIE}
 
   test_vehiculo1: 
     build: 
@@ -109,3 +110,22 @@ services:
       - "80:80" 
     depends_on:
       - backend_central
+  # ---------------------------------------------------- 
+  # Middleware                                             
+  # ---------------------------------------------------- 
+  middleware: 
+    container_name: middleware_comando_estelar
+    build:
+      context: ./middleware/
+      dockerfile: Dockerfile
+    ports:
+      - "${MIDDLEWARE_PORT}:4000"
+    depends_on:
+      db_central:
+        condition: service_healthy
+    environment:
+      - POSTGRES_PASSWORD=${MIDDLEWARE_PASSWORD}
+      - POSTGRES_USER=${MIDDLEWARE_USER}
+      - POSTGRES_DB=${MIDDLEWARE_DB}
+      - DB_HOST=${MIDDLEWARE_DB_HOST}
+      - RELEASE_COOKIE=${RELEASE_COOKIE}
