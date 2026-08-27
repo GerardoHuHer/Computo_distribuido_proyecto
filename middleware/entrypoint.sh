@@ -2,10 +2,10 @@
 set -e
 
 echo "Creando base de datos"
-mix ecto.create
+#mix ecto.create
 
 echo "Corriendo migraciones"
-mix ecto.migrate
+#mix ecto.migrate
 
 echo "Levantando Phoenix"
 NODE_IP=$(hostname -i)
