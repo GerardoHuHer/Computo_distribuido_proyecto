@@ -7,5 +7,5 @@ mix ecto.create
 echo "Corriendo migraciones"
 mix ecto.migrate
 
-echo "Levantando Phoenix"
-exec mix phx.server
+NODE_IP=$(hostname -i)
+exec elixir --name backend_rover@${NODE_IP} --cookie ${RELEASE_COOKIE} -S mix phx.server
