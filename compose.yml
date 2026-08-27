@@ -121,7 +121,7 @@ services:
     ports:
       - "${MIDDLEWARE_PORT}:4000"
     depends_on:
-      db_central:
+      db_middleware:
         condition: service_healthy
     environment:
       - POSTGRES_PASSWORD=${MIDDLEWARE_PASSWORD}
@@ -129,3 +129,19 @@ services:
       - POSTGRES_DB=${MIDDLEWARE_DB}
       - DB_HOST=${MIDDLEWARE_DB_HOST}
       - RELEASE_COOKIE=${RELEASE_COOKIE}
+
+  db_middleware:
+    image: postgres:18-alpine
+    container_name: postgres_middleware
+    environment:
+      POSTGRES_USER: ${MIDDLEWARE_USER}
+      POSTGRES_PASSWORD: ${MIDDLEWARE_PASSWORD}
+      POSTGRES_DB: ${MIDDLEWARE_DB}
+    ports:
+      - "${MIDDLEWARE_DB_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MIDDLEWARE_USER} -d ${MIDDLEWARE_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
