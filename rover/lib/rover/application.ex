@@ -7,7 +7,10 @@ defmodule Rover.Application do
 
   @impl true
   def start(_type, _args) do
+    topologies = Application.get_env(:libcluster, :topologies) || []
+
     children = [
+      {Cluster.Supervisor, [topologies, [name: Rover.ClusterSupervisor]]},
       RoverWeb.Telemetry,
       Rover.Repo,
       {DNSCluster, query: Application.get_env(:rover, :dns_cluster_query) || :ignore},
