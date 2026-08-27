@@ -4,7 +4,6 @@ central/_build/
 central/deps/
 central/erl_crash.dump
 central/.formatter.exs
-
 central_front/node_modules
 
 erl_crash.dump
@@ -15,4 +14,11 @@ rover/_build/
 rover/deps/
 rover/erl_crash.dump
 rover/.formatter.exs
+
+middleware/mix.lock
+middleware/.elixir_ls
+middleware/_build/
+middleware/deps/
+middleware/erl_crash.dump
+middleware/.formatter.exs
 
