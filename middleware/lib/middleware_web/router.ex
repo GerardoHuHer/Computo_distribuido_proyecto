@@ -7,6 +7,8 @@ defmodule MiddlewareWeb.Router do
 
   scope "/api", MiddlewareWeb do
     pipe_through :api
+
+    post("/gateway", Gateway, :gateway)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
