@@ -11,6 +11,9 @@ defmodule RoverWeb.RpcHandler do
   def handle_request("get_vehiculo", params),
     do: VehiculoHandler.handle_request("get_vehiculo", params)
 
+  def handle_request("move_vehiculo", params),
+    do: VehiculoHandler.handle_request("move_vehiculo", params)
+
   def handle_request("get_evento_random", params),
     do: EventosHandler.handle_request("get_evento_random", params)
 

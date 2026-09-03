@@ -26,11 +26,31 @@ defmodule RoverWeb.Handlers.VehiculoHandler do
     end
   end
 
+  def handle_request("move_vehiculo", params) do
+    with {:ok, rover} <- fetch_rover(params["id"]),
+         {:ok, updated_rover} <- Vehiculo.update_vehiculo(rover, params) do
+      {:ok, data(updated_rover)}
+    else
+      {:error, :not_found} ->
+        {:error, %{msg: "Rover not found"}}
+
+      {:error, changeset} ->
+        {:error, %{msg: changeset}}
+    end
+  end
+
   defp data(%Rover.Vehiculo.Vehiculo{} = vehiculo) do
     %{
       id: vehiculo.id,
       pos_x: vehiculo.pos_x,
       pos_y: vehiculo.pos_y
     }
+  end
+
+  defp fetch_rover(id) do
+    case Vehiculo.get_vehiculo(id) do
+      nil -> {:error, :not_found}
+      rover -> {:ok, rover}
+    end
   end
 end
