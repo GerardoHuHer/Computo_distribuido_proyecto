@@ -10,8 +10,6 @@ defmodule Rover.Vehiculo.Vehiculo do
     field :pos_y, :integer, default: 0
     field :timestamp, :utc_datetime
 
-    # Conexión con mejoras.
-    has_many :mejora, Rover.Vehiculo.Mejora, foreign_key: :id_rover
     timestamps()
   end
 
