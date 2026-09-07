@@ -13,4 +13,8 @@ defmodule Rover.Eventos do
   def get_evento_random(id) do
     Repo.get(EventosOpciones, id)
   end
+
+  def get_len_evento() do
+    Repo.all(EventosOpciones) |> Enum.count()
+  end
 end
