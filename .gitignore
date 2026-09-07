@@ -22,3 +22,11 @@ middleware/deps/
 middleware/erl_crash.dump
 middleware/.formatter.exs
 
+clima/mix.lock
+clima/.elixir_ls
+clima/_build/
+clima/deps/
+clima/erl_crash.dump
+clima/.formatter.exs
+
+
