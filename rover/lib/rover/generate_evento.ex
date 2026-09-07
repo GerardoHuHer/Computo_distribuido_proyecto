@@ -32,7 +32,7 @@ defmodule Rover.GenerateEvento do
           params: evento
         }
 
-        case GenServer.call(Middleware.RequestQueue, {:encolar, payload}) do
+        case GenServer.call(Middleware.RequestQueue, {:encolar, payload}, 10_000) do
           {:error, reason} ->
             Logger.error("Error al enviar el evennto a central #{inspect(reason)}")
 
