@@ -13,6 +13,7 @@ defmodule Rover.Application do
       {Cluster.Supervisor, [topologies, [name: Rover.ClusterSupervisor]]},
       RoverWeb.Telemetry,
       Rover.Repo,
+      Rover.GenerateEvento,
       {DNSCluster, query: Application.get_env(:rover, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Rover.PubSub},
       # Start a worker by calling: Rover.Worker.start_link(arg)
