@@ -18,14 +18,20 @@ defmodule RoverWeb.Handlers.EventosHandler do
   end
 
   def handle_request("load_eventos_db", _params) do
-    data = load_data_from_csv(@path)
+    case Eventos.get_len_evento() do
+      0 ->
+        data = load_data_from_csv(@path)
 
-    case Eventos.post_all_data(data) do
-      {:ok, cantidad} ->
-        {:ok, %{"msg" => "Se han añadido los #{cantidad} eventos con éxito"}}
+        case Eventos.post_all_data(data) do
+          {:ok, cantidad} ->
+            {:ok, %{"msg" => "Se han añadido los #{cantidad} eventos con éxito"}}
 
-      {:error, changeset} ->
-        {:error, %{changeset: changeset}}
+          {:error, changeset} ->
+            {:error, %{changeset: changeset}}
+        end
+
+      _ ->
+        {:ok, %{"msg" => "Ya están cargados los eventos"}}
     end
   end
 
