@@ -29,6 +29,19 @@ config :central, Central.Repo,
   hostname: System.get_env("DB_HOST") || "db",
   database: System.get_env("POSTGRES_DB") || "db"
 
+config :libcluster,
+  topologies: [
+    central_cluster: [
+      strategy: Cluster.Strategy.Gossip,
+      config: [
+        port: 45892,
+        if_addr: {0, 0, 0, 0},
+        multicast_addr: {230, 1, 1, 251},
+        multicast_ttl: 1
+      ]
+    ]
+  ]
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
