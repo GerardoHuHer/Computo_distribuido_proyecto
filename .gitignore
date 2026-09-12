@@ -22,11 +22,11 @@ middleware/deps/
 middleware/erl_crash.dump
 middleware/.formatter.exs
 
-clima/mix.lock
-clima/.elixir_ls
-clima/_build/
-clima/deps/
-clima/erl_crash.dump
-clima/.formatter.exs
+invetario/mix.lock
+invetario/.elixir_ls
+invetario/_build/
+invetario/deps/
+invetario/erl_crash.dump
+invetario/.formatter.exs
 
 
