@@ -22,6 +22,25 @@ end
 
 config :clima, ClimaWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+config :clima, Clima.Repo,
+  username: System.get_env("CLIMA1_POSTGRES_USER"),
+  password: System.get_env("CLIMA1_POSTGRES_PASSWORD"),
+  hostname: System.get_env("CLIMA1_DB_HOST"),
+  database: System.get_env("CLIMA1_POSTGRES_DB")
+
+config :libcluster,
+  topologies: [
+    clima_cluster: [
+      strategy: Cluster.Strategy.Gossip,
+      config: [
+        port: 45892,
+        if_addr: {0, 0, 0, 0},
+        multicast_addr: {230, 1, 1, 251},
+        multicast_ttl: 1
+      ]
+    ]
+  ]
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
