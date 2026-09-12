@@ -7,6 +7,7 @@ defmodule Central.Eventos.Eventos do
     field :description, :string, default: ""
     field :pos_x, :integer
     field :pos_y, :integer
+    field :revisado, :boolean, default: false
 
     timestamps()
   end
