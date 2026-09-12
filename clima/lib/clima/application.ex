@@ -7,7 +7,10 @@ defmodule Clima.Application do
 
   @impl true
   def start(_type, _args) do
+    topologies = Application.get_env(:libcluster, :topologies) || []
+
     children = [
+      {Cluster.Supervisor, [topologies, [name: Clima.ClusterSupervisor]]},
       ClimaWeb.Telemetry,
       Clima.Repo,
       {DNSCluster, query: Application.get_env(:clima, :dns_cluster_query) || :ignore},
