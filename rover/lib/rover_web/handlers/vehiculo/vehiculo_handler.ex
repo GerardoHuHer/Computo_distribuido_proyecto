@@ -39,6 +39,17 @@ defmodule RoverWeb.Handlers.VehiculoHandler do
     end
   end
 
+  def handle_request("delete_vehiculo", params) do
+    with {:ok, rover} <- fetch_rover(params["id"]),
+         {:ok, _} <-
+           Vehiculo.delete_vehiculo(rover) do
+      {:ok, %{msg: "Rover #{rover} was deleted"}}
+    else
+      {:error, :not_found} ->
+        {:error, %{msg: "Rover not found"}}
+    end
+  end
+
   defp data(%Rover.Vehiculo.Vehiculo{} = vehiculo) do
     %{
       id: vehiculo.id,

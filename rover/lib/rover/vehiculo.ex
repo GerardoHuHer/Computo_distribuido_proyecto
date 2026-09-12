@@ -14,7 +14,6 @@ defmodule Rover.Vehiculo do
     Repo.get(Vehiculo, id)
   end
 
-
   def get_all_vehiculos() do
     Repo.all(Vehiculo)
   end
