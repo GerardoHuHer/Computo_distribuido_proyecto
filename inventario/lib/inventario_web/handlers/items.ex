@@ -32,7 +32,7 @@ defmodule InventarioWeb.Handlers.Items do
   def handle_request("delete_item", params) do
     with {:ok, item} <- fetch_item(params["id"]),
          {:ok, _} <- Inventario.delete_item(item) do
-      {:ok, %{msg: "Item: #{item} was deleted"}}
+      {:ok, %{msg: "Item: #{item.name} was deleted"}}
     else
       {:error, :not_found} ->
         {:error, %{msg: "Item not found"}}
