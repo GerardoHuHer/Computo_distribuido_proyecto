@@ -3,7 +3,6 @@ defmodule Inventario.Repo.Migrations.CreateInventario do
 
   def change do
     create table(:inventario) do
-      add :id, :integer, primary_key: true
       add :name, :string, default: " "
       add :description, :string, default: ""
       add :cantidad, :integer, default: 0
