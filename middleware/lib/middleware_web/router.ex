@@ -9,6 +9,7 @@ defmodule MiddlewareWeb.Router do
     pipe_through :api
 
     post("/gateway", Gateway, :gateway)
+    get "/debug/nodos", DebugController, :nodos
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
