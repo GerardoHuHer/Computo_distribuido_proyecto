@@ -18,7 +18,7 @@ defmodule RoverWeb.Handlers.EventosHandler do
         vehiculo =
           case Vehiculo.get_all_vehiculos() do
             [] -> %{pos_x: 0, pos_y: 0}
-            values -> values |> Map.values() |> Enum.random()
+            values -> values |> Enum.random()
           end
 
         {:ok,
