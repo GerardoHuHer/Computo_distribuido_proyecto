@@ -7,7 +7,10 @@ defmodule Inventario.Application do
 
   @impl true
   def start(_type, _args) do
+    topologies = Application.get_env(:libcluster, :topologies) || []
+
     children = [
+      {Cluster.Supervisor, [topologies, [name: Inventario.ClusterSupervisor]]},
       InventarioWeb.Telemetry,
       Inventario.Repo,
       {DNSCluster, query: Application.get_env(:inventario, :dns_cluster_query) || :ignore},
