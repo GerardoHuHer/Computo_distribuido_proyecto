@@ -9,4 +9,4 @@ echo "Corriendo migraciones"
 
 echo "Levantando Phoenix"
 NODE_IP=$(hostname -i)
-exec elixir --name backend_rover@${NODE_IP} --cookie ${RELEASE_COOKIE} -S mix phx.server
+exec elixir --name middleware@${NODE_IP} --cookie ${RELEASE_COOKIE} -S mix phx.server
