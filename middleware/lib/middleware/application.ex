@@ -11,9 +11,10 @@ defmodule Middleware.Application do
 
     children = [
       {Cluster.Supervisor, [topologies, [name: Middleware.ClusterSupervisor]]},
+      {Task.Supervisor, name: Middleware.TaskSupervisor},
       Middleware.RequestQueue,
       MiddlewareWeb.Telemetry,
-      #Middleware.Repo,
+      # Middleware.Repo,
       {DNSCluster, query: Application.get_env(:middleware, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Middleware.PubSub},
       # Start a worker by calling: Middleware.Worker.start_link(arg)
