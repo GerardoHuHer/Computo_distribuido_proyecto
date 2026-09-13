@@ -3,7 +3,6 @@ defmodule Rover.GenerateEvento do
   require Logger
   alias RoverWeb.Handlers.EventosHandler
 
-  # Función de la librería timer de erlang para setear timer a un minuto
   @timer :timer.minutes(1)
 
   def start_link(_opts) do
@@ -27,14 +26,14 @@ defmodule Rover.GenerateEvento do
     case EventosHandler.handle_request("get_evento_random", %{}) do
       {:ok, evento} ->
         payload = %{
-          type: "central",
-          action: "recibir_evento",
-          params: evento
+          "type" => "central",
+          "action" => "recibir_evento",
+          "params" => evento
         }
 
-        case GenServer.call(Middleware.RequestQueue, {:encolar, payload}, 10_000) do
+        case enviar_a_middleware(payload) do
           {:error, reason} ->
-            Logger.error("Error al enviar el evennto a central #{inspect(reason)}")
+            Logger.error("Error al enviar el evento a central #{inspect(reason)}")
 
           _resultado ->
             :ok
@@ -46,5 +45,29 @@ defmodule Rover.GenerateEvento do
 
     Process.send_after(self(), :generar_evento, @timer)
     {:noreply, state}
+  end
+
+  defp enviar_a_middleware(payload) do
+    case buscar_middleware() do
+      nil ->
+        {:error, :middleware_no_disponible}
+
+      nodo ->
+        case :rpc.call(
+               nodo,
+               GenServer,
+               :call,
+               [Middleware.RequestQueue, {:encolar, payload}, 10_000],
+               15_000
+             ) do
+          {:badrpc, reason} -> {:error, {:badrpc, reason}}
+          resultado -> resultado
+        end
+    end
+  end
+
+  defp buscar_middleware do
+    Node.list()
+    |> Enum.find(fn nodo -> String.starts_with?(Atom.to_string(nodo), "middleware") end)
   end
 end
