@@ -32,6 +32,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_DB=${POSTGRES_DB}
       - DB_HOST=${DB_HOST}
+      - RELEASE_COOKIE=${RELEASE_COOKIE}
 
   test_central: 
     build: 
@@ -51,7 +52,7 @@ services:
   # ----------------------------------------------------
   # Vehiculo
   # ----------------------------------------------------
-  db_vehiculo1:
+  db_vehiculo:
     image: postgres:18-alpine
     container_name: postgres_vehiculo1
     environment:
@@ -74,7 +75,7 @@ services:
     ports:
       - "${ROVER1_BACKEND_PORT}:4000"
     depends_on:
-      db_vehiculo1:
+      db_vehiculo:
         condition: service_healthy
     environment:
       - ROVER1_POSTGRES_PASSWORD=${ROVER1_POSTGRES_PASSWORD}
@@ -89,13 +90,64 @@ services:
       dockerfile: Dockerfile
     command: ["mix", "test"]
     depends_on: 
-      db_vehiculo1: 
+      db_vehiculo: 
         condition: service_healthy
     environment:
       - ROVER1_POSTGRES_PASSWORD=${ROVER1_POSTGRES_PASSWORD}
       - ROVER1_POSTGRES_USER=${ROVER1_POSTGRES_USER}
       - ROVER1_POSTGRES_DB=${ROVER1_POSTGRES_DB}
       - ROVER1_DB_HOST=${ROVER1_DB_HOST}
+    profiles: ["test"]
+
+
+  # ----------------------------------------------------
+  # Inventario 
+  # ----------------------------------------------------
+  db_inventario:
+    image: postgres:18-alpine
+    container_name: postgres_inventario1
+    environment:
+      POSTGRES_USER: ${INVENTARIO1_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${INVENTARIO1_POSTGRES_PASSWORD} 
+      POSTGRES_DB: ${INVENTARIO1_POSTGRES_DB}
+    ports:
+      - "${INVENTARIO1_POSTGRES_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${INVENTARIO1_POSTGRES_USER} -d ${INVENTARIO1_POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend_inventario1: 
+    container_name: backend_inventario1
+    build:
+      context: ./inventario/
+      dockerfile: Dockerfile
+    ports:
+      - "${INVENTARIO1_BACKEND_PORT}:4000"
+    depends_on:
+      db_inventario:
+        condition: service_healthy
+    environment:
+      - INVENTARIO1_POSTGRES_PASSWORD=${INVENTARIO1_POSTGRES_PASSWORD}
+      - INVENTARIO1_POSTGRES_USER=${INVENTARIO1_POSTGRES_USER}
+      - INVENTARIO1_POSTGRES_DB=${INVENTARIO1_POSTGRES_DB}
+      - INVENTARIO1_DB_HOST=${INVENTARIO1_DB_HOST}
+      - RELEASE_COOKIE=${RELEASE_COOKIE}
+
+  test_inventario1: 
+    build: 
+      context: ./inventario/
+      dockerfile: Dockerfile
+    command: ["mix", "test"]
+    depends_on: 
+      db_inventario: 
+        condition: service_healthy
+    environment:
+      - INVENTARIO1_POSTGRES_PASSWORD=${INVENTARIO1_POSTGRES_PASSWORD}
+      - INVENTARIO1_POSTGRES_USER=${INVENTARIO1_POSTGRES_USER}
+      - INVENTARIO1_POSTGRES_DB=${INVENTARIO1_POSTGRES_DB}
+      - INVENTARIO1_DB_HOST=${INVENTARIO1_DB_HOST}
     profiles: ["test"]
 
   # ----------------------------------------------------
@@ -130,18 +182,18 @@ services:
       - DB_HOST=${MIDDLEWARE_DB_HOST}
       - RELEASE_COOKIE=${RELEASE_COOKIE}
 
-  db_middleware:
-    image: postgres:18-alpine
-    container_name: postgres_middleware
-    environment:
-      POSTGRES_USER: ${MIDDLEWARE_USER}
-      POSTGRES_PASSWORD: ${MIDDLEWARE_PASSWORD}
-      POSTGRES_DB: ${MIDDLEWARE_DB}
-    ports:
-      - "${MIDDLEWARE_DB_PORT}:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MIDDLEWARE_USER} -d ${MIDDLEWARE_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+#  db_middleware:
+#    image: postgres:18-alpine
+#    container_name: postgres_middleware
+#    environment:
+#      POSTGRES_USER: ${MIDDLEWARE_USER}
+#      POSTGRES_PASSWORD: ${MIDDLEWARE_PASSWORD}
+#      POSTGRES_DB: ${MIDDLEWARE_DB}
+#    ports:
+#      - "${MIDDLEWARE_DB_PORT}:5432"
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U ${MIDDLEWARE_USER} -d ${MIDDLEWARE_DB}"]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 5
 
