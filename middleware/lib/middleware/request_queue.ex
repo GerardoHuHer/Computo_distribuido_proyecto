@@ -44,7 +44,7 @@ defmodule Middleware.RequestQueue do
   defp modulo_para(tipo) do
     case tipo do
       "rover" -> RoverWeb.RpcHandler
-      "clima" -> ClimaWeb.RpcHandler
+      "inventario" -> InventarioWeb.RpcHandler
       "central" -> CentralWeb.RpcHandler
       _ -> nil
     end
