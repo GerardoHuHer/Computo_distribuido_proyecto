@@ -2,7 +2,7 @@ defmodule MiddlewareWeb.Gateway do
   use MiddlewareWeb, :controller
 
   def gateway(conn, payload) do
-    case GenServer.call(Middleware.RequestQueue, {:encolar, payload}) do
+    case GenServer.call(Middleware.RequestQueue, {:encolar, payload}, 30_000) do
       {:ok, data} ->
         conn
         |> put_status(:ok)
