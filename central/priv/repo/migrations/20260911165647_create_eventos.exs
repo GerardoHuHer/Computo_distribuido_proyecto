@@ -2,8 +2,7 @@ defmodule Central.Repo.Migrations.CreateEventos do
   use Ecto.Migration
 
   def change do
-    create_table(:eventos) do
-      add :id, :integer, primary_key: true
+    create table(:eventos) do
       add :name, :string, default: ""
       add :description, :string, default: ""
       add :pos_x, :integer
