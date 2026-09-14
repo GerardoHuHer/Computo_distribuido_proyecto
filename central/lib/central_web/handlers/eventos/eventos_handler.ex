@@ -34,7 +34,7 @@ defmodule CentralWeb.Handlers.EventosHandler do
     with {:ok, rover} <- fetch_evento(params["id"]),
          {:ok, _} <-
            Eventos.delete_evetos(rover) do
-      {:ok, %{msg: "Evento #{rover} was deleted"}}
+      {:ok, %{msg: "Evento #{rover.id} was deleted"}}
     else
       {:error, :not_found} ->
         {:error, %{msg: "Evento not found"}}
@@ -44,6 +44,7 @@ defmodule CentralWeb.Handlers.EventosHandler do
   # Función para parsear la información y devolver
   defp data(%Central.Eventos.Eventos{} = evento) do
     %{
+      id: evento.id,
       name: evento.name,
       description: evento.description,
       pos_x: evento.pos_x,
