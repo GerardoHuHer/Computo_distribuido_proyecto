@@ -155,9 +155,9 @@ services:
       context: ./central_front/
       dockerfile: Dockerfile
     ports:
-      - "80:80" 
+      - "80:80"
     depends_on:
-      - backend_central
+      - middleware
 
   # ---------------------------------------------------- 
   # Middleware                                             
