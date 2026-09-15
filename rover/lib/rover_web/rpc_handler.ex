@@ -18,7 +18,7 @@ defmodule RoverWeb.RpcHandler do
     do: EventosHandler.handle_request("get_evento_random", params)
 
   def handle_request("delete_vehiculo", params),
-    do: EventosHandler.handle_request("delete_vehiculo", params)
+    do: VehiculoHandler.handle_request("delete_vehiculo", params)
 
   def handle_request(unknow_action, _params) do
     {:error, {:unknow_action, unknow_action}}
