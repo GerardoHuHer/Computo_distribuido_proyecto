@@ -1,4 +1,4 @@
-central/mix.lock
+#central/mix.lock
 central/.elixir_ls
 central/_build/
 central/deps/
@@ -8,21 +8,21 @@ central_front/node_modules
 
 erl_crash.dump
 
-rover/mix.lock
+#rover/mix.lock
 rover/.elixir_ls
 rover/_build/
 rover/deps/
 rover/erl_crash.dump
 rover/.formatter.exs
 
-middleware/mix.lock
+#middleware/mix.lock
 middleware/.elixir_ls
 middleware/_build/
 middleware/deps/
 middleware/erl_crash.dump
 middleware/.formatter.exs
 
-invetario/mix.lock
+#invetario/mix.lock
 invetario/.elixir_ls
 invetario/_build/
 invetario/deps/
