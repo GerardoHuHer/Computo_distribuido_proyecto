@@ -19,4 +19,4 @@ COPY . .
 
 EXPOSE 4002
 
-CMD ["./entrypoint.sh"]
+CMD ["sh", "-c", "NODE_IP=$(hostname -i) && exec elixir --name middleware@${NODE_IP} --cookie ${RELEASE_COOKIE} -S mix phx.server"]

@@ -19,4 +19,4 @@ COPY . .
 
 EXPOSE 4001
 
-CMD ["./entrypoint.sh"]
+CMD ["sh", "-c", "NODE_IP=$(hostname -i) && mix ecto.create --quiet; mix ecto.migrate && exec elixir --name backend_rover@${NODE_IP} --cookie ${RELEASE_COOKIE} -S mix phx.server"]
