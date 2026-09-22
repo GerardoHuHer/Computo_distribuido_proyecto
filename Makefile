@@ -6,8 +6,11 @@ ELIXIR_SERVICES = backend_central backend_vehiculo1 backend_inventario1
 REACT_SERVICE = frontend
 DB = db_central db_vehiculo db_inventario
 
+JENKINS = jenkins
+
+
 # Directiva para crear un target y evitar una tarea.
-.PHONY: help build build-app up down logs logs-app scale restart-app db-migrate test setup
+.PHONY: help build build-app up down logs logs-app scale restart-app db-migrate test setup jenkins
 
 # Target help para mostrar funcionalidades
 help:
@@ -21,6 +24,7 @@ help:
 	@echo " - make build-app APP=<nombre_app>       - Reconstruye todas las imágenes"
 	@echo " - make logs                             - Muestra los logs de todas las aplicaciones"
 	@echo " - make scale INS=<cantidad>             - Levanta <cantidad> de contenedores por servicio de elixir"
+	@echo " - make rm-volumes                       - Borra los volumes del proyectoBorra los volumes del proyecto"
 	@echo ""
 	@echo "Tareas propias de Elixir"
 	@echo " - make db-migrate                       - Ejecuta las migraciones de los servicios"
@@ -29,6 +33,9 @@ help:
 	@echo "Herramientas de desarrollo"
 	@echo " - make logs-app APP=<nombre_app>        - Logs de un servicio en específico"
 	@echo " - make restart-app APP=<nombre_app>     - Restart de un servicio en específico"
+	@echo ""
+	@echo "CI/CD"
+	@echo " - make jenkins                          - Levanta UI de Jenkins"
 
 # Target para hacer build a todos los contenedores
 build:
@@ -89,3 +96,11 @@ test:
 setup: build up db-migrate
 	@echo "Entorno configurado"
 
+
+jenkins:
+	@echo "Levantando servidor de Jenkins"
+	$(DC) up $(JENKINS)
+
+rm-volumes:
+	@echo "Eliminando volumes"
+	docker volume rm $(docker volume ls -q | grep "crud_project" | grep -v "crud_project_jenkins_home")

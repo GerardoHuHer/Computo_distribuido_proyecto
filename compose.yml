@@ -182,7 +182,22 @@ services:
       - DB_HOST=${MIDDLEWARE_DB_HOST}
       - RELEASE_COOKIE=${RELEASE_COOKIE}
 
+    # ---------------------------------------------------- 
+    # Jenkins
+    # ---------------------------------------------------- 
+  jenkins:
+    container_name: jenkins_container_distribuido
+    build:
+      context: ./
+      dockerfile: jenkins.Dockerfile
+    ports:
+      - "9090:8080"
+      - "50000:50000"
+    volumes:
+        - jenkins_home:/var/jenkins_home
+
 volumes:
   pgdata_central:
   pgdata_vehiculo:
   pgdata_inventario:
+  jenkins_home:
