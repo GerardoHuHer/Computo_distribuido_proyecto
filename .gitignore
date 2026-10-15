@@ -29,4 +29,4 @@ invetario/deps/
 invetario/erl_crash.dump
 invetario/.formatter.exs
 
-
+.env
