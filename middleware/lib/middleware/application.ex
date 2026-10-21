@@ -11,8 +11,11 @@ defmodule Middleware.Application do
 
     children = [
       {Cluster.Supervisor, [topologies, [name: Middleware.ClusterSupervisor]]},
-      {Task.Supervisor, name: Middleware.TaskSupervisor},
-      Middleware.RequestQueue,
+      # {Task.Supervisor, name: Middleware.TaskSupervisor},
+      # Middleware.RequestQueue,
+      {Middleware.Cola, "rover"},
+      {Middleware.Cola, "inventario"},
+      {Middleware.Cola, "central"},
       MiddlewareWeb.Telemetry,
       # Middleware.Repo,
       {DNSCluster, query: Application.get_env(:middleware, :dns_cluster_query) || :ignore},

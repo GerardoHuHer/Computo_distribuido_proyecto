@@ -55,9 +55,9 @@ defmodule Rover.GenerateEvento do
       nodo ->
         case :rpc.call(
                nodo,
-               GenServer,
-               :call,
-               [Middleware.RequestQueue, {:encolar, payload}, 10_000],
+               Middleware.Cola,
+               :encolar,
+               [payload, 10_000],
                15_000
              ) do
           {:badrpc, reason} -> {:error, {:badrpc, reason}}

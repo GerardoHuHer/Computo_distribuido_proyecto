@@ -13,6 +13,7 @@ defmodule Central.Application do
       {Cluster.Supervisor, [topologies, [name: Central.ClusterSupervisor]]},
       CentralWeb.Telemetry,
       Central.Repo,
+      Central.Cola.Consumidor,
       {DNSCluster, query: Application.get_env(:central, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Central.PubSub},
       # Start a worker by calling: Central.Worker.start_link(arg)

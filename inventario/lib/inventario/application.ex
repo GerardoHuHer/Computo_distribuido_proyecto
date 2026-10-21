@@ -13,6 +13,7 @@ defmodule Inventario.Application do
       {Cluster.Supervisor, [topologies, [name: Inventario.ClusterSupervisor]]},
       InventarioWeb.Telemetry,
       Inventario.Repo,
+      Inventario.Cola.Consumidor,
       {DNSCluster, query: Application.get_env(:inventario, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Inventario.PubSub},
       # Start a worker by calling: Inventario.Worker.start_link(arg)

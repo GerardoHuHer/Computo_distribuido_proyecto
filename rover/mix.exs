@@ -53,7 +53,8 @@ defmodule Rover.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:nimble_csv, "~> 1.2"},
-      {:libcluster, "~> 3.5.0"}
+      {:libcluster, "~> 3.5.0"},
+      {:gen_stage, "~> 1.2"}
     ]
   end
 

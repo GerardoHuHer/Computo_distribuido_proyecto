@@ -5,7 +5,7 @@ defmodule MiddlewareWeb.Gateway do
     with :ok <- validar_payload(payload) do
       payload = Map.put_new(payload, "params", %{})
 
-      case GenServer.call(Middleware.RequestQueue, {:encolar, payload}, 30_000) do
+      case Middleware.Cola.encolar(payload, 30_000) do
         {:ok, data} ->
           conn
           |> put_status(:ok)
@@ -20,6 +20,11 @@ defmodule MiddlewareWeb.Gateway do
           conn
           |> put_status(:service_unavailable)
           |> json(%{error: "Sin backends disponibles"})
+
+        {:error, :sobrecargado} ->
+          conn
+          |> put_status(:service_unavailable)
+          |> json(%{error: "Sistema sobrecargado"})
 
         {:error, reason} ->
           conn
