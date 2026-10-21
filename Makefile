@@ -5,12 +5,13 @@ MIDDLEWARE = middleware
 ELIXIR_SERVICES = backend_central backend_vehiculo1 backend_inventario1
 REACT_SERVICE = frontend
 DB = db_central db_vehiculo db_inventario
+TEST_SERVICES = test_central test_vehiculo1 test_inventario1
 
 JENKINS = jenkins
 
 
 # Directiva para crear un target y evitar una tarea.
-.PHONY: help build build-app up down logs logs-app scale restart-app db-migrate test setup jenkins
+.PHONY: help build build-app up down logs logs-app scale restart-app db-migrate test setup jenkins rm-volumes
 
 # Target help para mostrar funcionalidades
 help:
@@ -21,10 +22,10 @@ help:
 	@echo " - make up                               - Levanta todos los contenedores en modo detach"
 	@echo " - make down                             - Detiene todos los servicios"
 	@echo " - make build                            - Reconstruye todas las imágenes"
-	@echo " - make build-app APP=<nombre_app>       - Reconstruye todas las imágenes"
+	@echo " - make build-app APP=<nombre_app>       - Reconstruye la imagen de un servicio"
 	@echo " - make logs                             - Muestra los logs de todas las aplicaciones"
 	@echo " - make scale INS=<cantidad>             - Levanta <cantidad> de contenedores por servicio de elixir"
-	@echo " - make rm-volumes                       - Borra los volumes del proyectoBorra los volumes del proyecto"
+	@echo " - make rm-volumes                       - Borra los volumes del proyecto (excepto jenkins)"
 	@echo ""
 	@echo "Tareas propias de Elixir"
 	@echo " - make db-migrate                       - Ejecuta las migraciones de los servicios"
@@ -81,15 +82,15 @@ restart-app:
 # target para hacer las migraciones de la base de datos
 db-migrate:
 	@for service in $(ELIXIR_SERVICES); do \
-		echo "Ejecutando migraciones en $$service" \
+		echo "Ejecutando migraciones en $$service"; \
 		$(DC) exec $$service mix ecto.migrate || exit 1; \
 	done
 
 # Target para los test de phoenix
 test:
-	@for service in $(ELIXIR_SERVICES); do \
-		echo "Ejecutando test en $$service"
-		$(DC) exec $$service mix test || exit 1; \
+	@for service in $(TEST_SERVICES); do \
+		echo "Ejecutando test en $$service"; \
+		$(DC) --profile test run --rm $$service || exit 1; \
 	done
 
 # Target para el setup inicial
@@ -103,4 +104,4 @@ jenkins:
 
 rm-volumes:
 	@echo "Eliminando volumes"
-	docker volume rm $(docker volume ls -q | grep "crud_project" | grep -v "crud_project_jenkins_home")
+	docker volume rm $$(docker volume ls -q | grep "crud_project" | grep -v "crud_project_jenkins_home")
