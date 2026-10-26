@@ -10,7 +10,6 @@ apt-get install -y docker.io
 systemctl enable docker --now
 usermod -aG docker vagrant
 
-# Arreglo del backspace: si la VM no conoce el TERM del host, usar xterm-256color
 LINEA='infocmp "$TERM" >/dev/null 2>&1 || export TERM=xterm-256color'
 for rc in /home/vagrant/.bashrc /home/vagrant/.zshrc; do
   touch "$rc"
