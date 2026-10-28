@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Las dependencias necesarias son: \n1. Docker \n2. Make "
+echo "Las dependencias necesarias son: \n1. Docker \n2. Make \n3. Vagrant para desplegar a VM propias"
 # Remove previous versions
 sudo dnf remove docker \
   docker-client \
@@ -27,3 +27,13 @@ sudo docker run hello-world
 
 # Instalar make and gcc
 sudo dnf install make gcc
+
+# Vagrant
+sudo dnf install -y dnf-plugins-core
+bash sudo dnf config-manager --add-repo https://rmp.releases.hashicorp.com/fedora/hashicorp.repo
+
+bash sudo dnf -y install vagrant
+
+bash vagrant --version
+
+
