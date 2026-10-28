@@ -11,13 +11,13 @@ JENKINS = jenkins
 
 
 # Directiva para crear un target y evitar una tarea.
-.PHONY: help build build-app up down logs logs-app scale restart-app db-migrate test setup jenkins rm-volumes
+.PHONY: help build build-app up down logs logs-app scale restart-app db-migrate test setup jenkins rm-volumes vagrant
 
 # Target help para mostrar funcionalidades
 help:
-	@echo "=========================="
-	@echo "ORQUESTADOR MICROSERVICIOS"
-	@echo "=========================="
+	@echo "===================================================="
+	@echo "            ORQUESTADOR MICROSERVICIOS"
+	@echo "===================================================="
 	@echo "Entorno general:"
 	@echo " - make up                               - Levanta todos los contenedores en modo detach"
 	@echo " - make down                             - Detiene todos los servicios"
@@ -37,6 +37,8 @@ help:
 	@echo ""
 	@echo "CI/CD"
 	@echo " - make jenkins                          - Levanta UI de Jenkins"
+	@echo " - make vagrant                          - Levanta VM con Vagrant"
+
 
 # Target para hacer build a todos los contenedores
 build:
@@ -105,3 +107,7 @@ jenkins:
 rm-volumes:
 	@echo "Eliminando volumes"
 	docker volume rm $$(docker volume ls -q | grep "crud_project" | grep -v "crud_project_jenkins_home")
+
+vagrant:
+	@echo "Levantando VM"
+	vagrant up --provider=libvirt --no-parallel
