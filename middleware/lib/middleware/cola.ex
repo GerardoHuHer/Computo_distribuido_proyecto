@@ -25,6 +25,12 @@ defmodule Middleware.Cola do
   end
 
   @impl true
+  @docs """
+    cola: Instanciamos un cola con la librería queue de erlang para acumular las peticiones.
+    pendientes: Cuantos elementos tenemos listos para poder enviar, se acumulan aquí a través de encolar, estos el consumer no los ha pedido.
+    demanda: Cuantos elementos nos están pidiendo los consumers
+    
+  """
   def init(:ok) do
     {:producer, %{cola: :queue.new(), pendientes: 0, demanda: 0}}
   end
@@ -50,7 +56,9 @@ defmodule Middleware.Cola do
   end
 
   defp dispatch(%{cola: cola, demanda: demanda, pendientes: pendientes} = estado) do
+    # Obtenemos el mínimo en lo que nos están pidiendo o en lo que aún tenemos encolado
     n = min(demanda, pendientes)
+    # Dividimos la cola basado en el mínimo anterior para saber que podemos mandar
     {sacados, resto} = :queue.split(n, cola)
 
     {:noreply, :queue.to_list(sacados),
