@@ -25,12 +25,6 @@ defmodule Middleware.Cola do
   end
 
   @impl true
-  @docs """
-    cola: Instanciamos un cola con la librería queue de erlang para acumular las peticiones.
-    pendientes: Cuantos elementos tenemos listos para poder enviar, se acumulan aquí a través de encolar, estos el consumer no los ha pedido.
-    demanda: Cuantos elementos nos están pidiendo los consumers
-    
-  """
   def init(:ok) do
     {:producer, %{cola: :queue.new(), pendientes: 0, demanda: 0}}
   end
