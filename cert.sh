@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -e
+
 mkdir -p certs
 
 # 1. Certificate Authority (CA)
