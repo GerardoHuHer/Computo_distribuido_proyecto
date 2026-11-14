@@ -29,15 +29,30 @@ config :rover, Rover.Repo,
   hostname: System.get_env("ROVER1_DB_HOST"),
   database: System.get_env("ROVER1_POSTGRES_DB")
 
+# config :libcluster,
+#   topologies: [
+#     rover_cluster: [
+#       strategy: Cluster.Strategy.Gossip,
+#       config: [
+#         port: 45892,
+#         if_addr: {0, 0, 0, 0},
+#         multicast_addr: {230, 1, 1, 251},
+#         multicast_ttl: 1
+#       ]
+#     ]
+#   ]
+
 config :libcluster,
   topologies: [
-    rover_cluster: [
-      strategy: Cluster.Strategy.Gossip,
+    k8s: [
+      strategy: Cluster.Strategy.Kubernetes,
       config: [
-        port: 45892,
-        if_addr: {0, 0, 0, 0},
-        multicast_addr: {230, 1, 1, 251},
-        multicast_ttl: 1
+        mode: :hostname,
+        kubernetes_namespace: "default",
+        kubernetes_selector: "app=middleware",
+        kubernetes_node_basename: "middleware",
+        kubernetes_service_name: "middleware",
+        polling_interval: 5_000
       ]
     ]
   ]
