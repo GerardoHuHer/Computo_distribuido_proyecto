@@ -7,6 +7,7 @@ A distributed system that emulates a space rover control center. It was built fo
 - Frontend: TypeScript with React and Vite, served by Nginx. It provides a terminal-style interface.
 - Databases: one PostgreSQL 18 instance per backend.
 - CI/CD: Jenkins running in a container.
+- Orchestration: Kubernetes manifests (minikube) with mutual TLS between the Erlang nodes.
 - Infrastructure: Vagrant (libvirt) definitions for three Kali Linux virtual machines.
 
 ---
@@ -23,8 +24,9 @@ A distributed system that emulates a space rover control center. It was built fo
 8. [Frontend Terminal](#frontend-terminal)
 9. [Scaling and Load Balancing](#scaling-and-load-balancing)
 10. [Testing](#testing)
-11. [Infrastructure](#infrastructure)
-12. [Project Structure](#project-structure)
+11. [Kubernetes Deployment (minikube + TLS)](#kubernetes-deployment-minikube--tls)
+12. [Infrastructure](#infrastructure)
+13. [Project Structure](#project-structure)
 
 ---
 
@@ -63,7 +65,7 @@ Middleware (Phoenix, gateway + queues)
 
 ### Communication between nodes
 
-- All Elixir nodes join the same Erlang cluster. Node discovery is done with `libcluster` using the Gossip strategy, and the nodes share the cookie defined in `RELEASE_COOKIE`.
+- All Elixir nodes join the same Erlang cluster. Node discovery is done with `libcluster` using the Kubernetes strategy (`:hostname` mode), which asks the Kubernetes API for the pods of the middleware service, and the nodes share the cookie defined in `RELEASE_COOKIE`. Inside Kubernetes the node-to-node traffic is encrypted with mutual TLS (see [Kubernetes Deployment](#kubernetes-deployment-minikube--tls)).
 - The middleware owns one `GenStage` producer queue per backend type (`cola_rover`, `cola_inventario`, `cola_central`). Each queue holds up to 1000 pending requests; beyond that the middleware answers with `503`.
 - Every backend node runs a `GenStage` consumer that subscribes to the producer queue of its type on the middleware node. The consumer demands events in batches (`max_demand: 10`, `min_demand: 5`) and processes them concurrently.
 - Because consumers pull work according to their demand, requests are spread automatically among all available nodes of a given backend. Adding more instances of a backend increases throughput without any change to the middleware.
@@ -80,6 +82,8 @@ Middleware (Phoenix, gateway + queues)
 - 16 GB of RAM (recommended, the full stack runs several Elixir nodes and four PostgreSQL containers)
 
 On Fedora, `install_dependencies.sh` installs Docker Engine, the Compose plugin, `make` and `gcc`.
+
+These requirements cover the Docker Compose stack. The Kubernetes deployment has its own requirements, listed in [Kubernetes Deployment](#kubernetes-deployment-minikube--tls).
 
 ## Quick Start
 
@@ -102,6 +106,8 @@ To stop everything:
 ```
 make down
 ```
+
+> **Note:** node discovery in `config/runtime.exs` now uses the Kubernetes strategy. The Compose stack starts every container, but the Elixir nodes do not join the same Erlang cluster, so requests do not reach the backends. Use the [Kubernetes deployment](#kubernetes-deployment-minikube--tls) to run the complete system.
 
 ## Configuration
 
@@ -259,6 +265,209 @@ make test
 
 Test services are defined under the `test` Compose profile and run against their own database containers.
 
+## Kubernetes Deployment (minikube + TLS)
+
+The whole system can run on a local Kubernetes cluster (minikube). All traffic between the Erlang nodes (the `GenStage` queues and the RPC replies) goes over **mutual TLS** (`inet_tls`) with certificates signed by a CA generated for this project.
+
+### Requirements
+
+| Tool | Notes |
+|---|---|
+| Linux x86_64 | The commands below target Fedora and Debian/Ubuntu. For ARM, replace `amd64` with `arm64` in the download URLs. |
+| Docker | Engine running, with your user in the `docker` group. minikube uses it as its driver. |
+| minikube | Created by the scripts with 2 CPUs and 4 GB of RAM. |
+| kubectl | Any recent version. |
+| openssl | Used by `cert.sh` to generate the certificates. |
+| git, curl | To clone the repository and download the binaries. |
+| Resources | At least 8 GB of RAM on the host (16 GB recommended) and internet access for the first run. |
+
+`make` is not needed for the Kubernetes deployment.
+
+### Setup on a brand-new machine
+
+These steps assume nothing is installed.
+
+1. Install the base tools.
+
+   Fedora:
+
+   ```
+   sudo dnf install -y git curl openssl dnf-plugins-core
+   ```
+
+   Debian / Ubuntu:
+
+   ```
+   sudo apt-get update
+   sudo apt-get install -y git curl openssl ca-certificates
+   ```
+
+2. Install Docker and start it.
+
+   Fedora:
+
+   ```
+   sudo dnf config-manager addrepo --from-repofile https://download.docker.com/linux/fedora/docker-ce.repo
+   sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+   sudo systemctl enable --now docker
+   ```
+
+   Debian / Ubuntu:
+
+   ```
+   sudo apt-get install -y docker.io
+   sudo systemctl enable --now docker
+   ```
+
+   Let your user run Docker without `sudo`, then log out and back in (or run `newgrp docker`) and check it:
+
+   ```
+   sudo usermod -aG docker $USER
+   docker run hello-world
+   ```
+
+3. Install `kubectl`:
+
+   ```
+   curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+   sudo install kubectl /usr/local/bin/kubectl
+   kubectl version --client
+   ```
+
+4. Install `minikube`:
+
+   ```
+   curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
+   sudo install minikube-linux-amd64 /usr/local/bin/minikube
+   minikube version
+   ```
+
+5. Clone the repository and start the deployment:
+
+   ```
+   git clone <repository-url>
+   cd <repository-directory>
+   bash k8s/run.sh
+   ```
+
+The `.env` file is not used by the Kubernetes deployment.
+
+### Run
+
+```
+bash k8s/run.sh
+```
+
+The script runs these stages, in order:
+
+1. Generates the certificates with `cert.sh` if `certs/` does not exist.
+2. Starts minikube and waits for the node to be ready.
+3. Builds the five images inside minikube (`minikube image build`).
+4. Recreates the Secrets and the `ssl-dist` ConfigMap with `k8s/secrets.sh`.
+5. Applies the manifests in order: RBAC, databases, middleware, backends and frontend.
+
+The first run takes several minutes: the images have to be built and each Elixir pod compiles the project on startup (dev mode). Check the progress with:
+
+```
+kubectl get pods
+```
+
+Every pod should end up `Running`. The script can be run again at any time.
+
+> `k8s/run.sh` deletes every Secret of the `default` namespace before recreating them. Do not run it against a cluster that is used for anything else.
+
+### Usage
+
+Open the frontend:
+
+```
+kubectl port-forward svc/frontend 8080:80
+```
+
+Then browse to `http://localhost:8080`. Keep the command running while you use the page.
+
+Reach the middleware API directly:
+
+```
+kubectl port-forward svc/middleware-http 4002:4000
+curl http://localhost:4002/api/debug/nodos
+```
+
+Run the functional test of every action through the gateway:
+
+```
+MIDDLEWARE_URL=http://localhost:4002 ./test_routes.sh
+```
+
+### Verify the TLS connection
+
+| Check | Command | Expected |
+|---|---|---|
+| Nodes joined the cluster | `kubectl logs backend-central-0 \| grep libcluster` | `connected to :"middleware@middleware-0.middleware.default.svc.cluster.local"` |
+| Connected backends | `curl http://localhost:4002/api/debug/nodos` | The three backends, with their DNS node names |
+| No certificate errors | `kubectl logs middleware-0 \| grep -i "bad certificate"` | No output |
+| TLS flag active | `kubectl exec middleware-0 -- sh -c "tr '\0' ' ' < /proc/1/cmdline"` | Contains `-proto_dist inet_tls` |
+
+### How TLS is wired
+
+| Piece | Purpose |
+|---|---|
+| `cert.sh` | Creates the CA and one certificate per service. Each certificate lists the exact DNS name of every pod (`<service>-0` to `<service>-4`) in its SAN. |
+| `k8s/secrets.sh` | Stores each certificate and key as a Kubernetes Secret, mounted in `/certs`. |
+| `k8s/ssl_dist.conf` | Erlang TLS options: CA, certificate, key and `verify_peer`. Mounted in `/tls` as a ConfigMap. |
+| `-proto_dist inet_tls -ssl_dist_optfile /tls/ssl_dist.conf` | VM flags that switch the node-to-node traffic to TLS. |
+| `libcluster` with `Cluster.Strategy.Kubernetes` | Discovers the nodes through the Kubernetes API. It needs the permissions in `k8s/rbac.yaml`. |
+
+Erlang does not match wildcard certificates by default, so the pod names are listed explicitly in the SAN. If you run more than five replicas of a service, extend the list in `cert.sh`.
+
+### Manifests
+
+All manifests live in `k8s/`.
+
+| File | Contents |
+|---|---|
+| `rbac.yaml` | ServiceAccount, Role and RoleBinding so `libcluster` can read the endpoints. |
+| `db-central.yaml`, `db-rover.yaml`, `db-inventario.yaml` | One PostgreSQL Deployment and Service per backend. Data is stored in an `emptyDir`, so it is lost when the pod is recreated. |
+| `middleware.yaml` | StatefulSet, headless Service `middleware` (cluster DNS) and Service `middleware-http` (HTTP). |
+| `backend-central.yaml`, `backend-rover.yaml`, `backend-inventario.yaml` | A StatefulSet and a headless Service per backend. An init container waits for the database. |
+| `frontend.yaml` | Nginx Deployment and NodePort Service. |
+| `ssl_dist.conf` | Erlang TLS options. |
+| `secrets.sh` | Creates the Secrets and the ConfigMap. |
+| `run.sh` | Runs the whole deployment. |
+
+The Erlang nodes are StatefulSets with headless Services, so each pod has a stable DNS name (`middleware-0.middleware.default.svc.cluster.local`). That name is also the Erlang node name and the name the certificates are checked against.
+
+### Regenerate the certificates
+
+`rm -rf certs && bash cert.sh` creates a new CA. Recreate the Secrets and restart the pods afterwards:
+
+```
+kubectl delete secret --all
+kubectl delete configmap ssl-dist
+bash k8s/secrets.sh
+kubectl rollout restart statefulset/middleware statefulset/backend-central \
+  statefulset/backend-rover statefulset/backend-inventario
+```
+
+`certs/` contains private keys and must not be committed.
+
+### Troubleshooting
+
+| Symptom | Cause |
+|---|---|
+| `ErrImageNeverPull` | The image was not built inside minikube. Use `minikube image build`. |
+| `hostname_check_failed` in a pod log | The pod name is not in the certificate SAN. Regenerate the certificates. |
+| `forbidden` from `libcluster` | `k8s/rbac.yaml` was not applied. |
+| A backend restarts at first | The database is not ready yet. The init container waits for it. |
+| Pods take a while to start | Dev mode: every pod compiles the project on startup (about two minutes). |
+| `permission denied` running `docker` | Your user is not in the `docker` group, or you have not logged in again. |
+
+### Tear down
+
+```
+minikube delete
+```
+
 ## Infrastructure
 
 The `infrastructure/` directory contains a `Vagrantfile` that provisions three Kali Linux virtual machines (`kali-rover`, `kali-inventario`, `kali-central`) with the libvirt provider.
@@ -285,6 +494,8 @@ A Terraform proposal for hosting the project is planned.
 ├── middleware/         Gateway and load balancer (Phoenix)
 ├── central_front/      React + Vite frontend served by Nginx
 ├── infrastructure/     Vagrant configuration and provisioning scripts
+├── k8s/                Kubernetes manifests, TLS options and deployment scripts
+├── cert.sh             Generates the CA and the service certificates
 ├── compose.yml         Docker Compose definition of the whole stack
 ├── Makefile            Project automation
 ├── Jenkinsfile         Jenkins pipeline
