@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: middleware
+  labels:
+    app: middleware
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector: { app: middleware }
+  ports:
+    - {name: epmd, port: 4369}
+    - { name: dist, port: 9000 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: middleware-http
+  labels:
+    app: middleware-http
+spec:
+  selector: { app: middleware }
+  ports:
+    - { port: 4000, targetPort: 4000 }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: middleware
+spec:
+  serviceName: middleware
+  replicas: 1
+  selector: 
+    matchLabels: { app: middleware }
+  template:
+    metadata:
+      labels: { app: middleware }
+    spec:
+      serviceAccountName: erl-cluster
+      containers:
+        - name: middleware
+          image: middleware:latest
+          imagePullPolicy: Never
+          command: ["sh", "-c"]
+          args:
+            - |
+              exec elixir \
+              --name middleware@${POD_NAME}.middleware.${POD_NAMESPACE}.svc.cluster.local \
+              --cookie "${RELEASE_COOKIE}" \
+              --erl "-proto_dist inet_tls -ssl_dist_optfile /tls/ssl_dist.conf -kernel inet_dist_listen_min 9000 inet_dist_listen_max 9000" \
+              -S mix phx.server
+          env:
+            - { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }  
+            - { name: POD_NAMESPACE, valueFrom: { fieldRef: { fieldPath: metadata.namespace } } }  
+            - { name: RELEASE_COOKIE, valueFrom: { secretKeyRef: { name: erl-cookie, key: cookie } } }  
+          ports:
+            - {containerPort: 4000}
+          volumeMounts:
+            - {name: certs, mountPath: /certs, readOnly: true}
+            - { name: ssl-dist, mountPath: /tls, readOnly: true }
+      volumes:
+        - name: certs
+          secret: { secretName: tls-middleware }      
+        - name: ssl-dist
+          configMap: { name: ssl-dist }
+
+            

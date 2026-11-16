@@ -33,3 +33,6 @@ invetario/.formatter.exs
 
 # Infrastructure
 infrastructure/.vagrant
+
+# Certificados
+certs/*

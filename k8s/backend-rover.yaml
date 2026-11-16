@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service # Tipo de servicio que se va a crear o gestionar en el cluster
+metadata:
+  name: backend-rover
+  labels:
+    app: backend-rover
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector: { app: backend-rover }
+  ports:
+    - { name: epmd, port: 4369 }
+    - { name: dist, port: 9000 }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: backend-rover
+spec:
+  serviceName: backend-rover
+  replicas: 1
+  selector:
+    matchLabels: { app: backend-rover }
+  template:
+    metadata:
+      labels: { app: backend-rover }
+    spec:
+      serviceAccountName: erl-cluster
+      initContainers:
+        - name: wait-db
+          image: postgres:18-alpine
+          command: ["sh", "-c", "until pg_isready -h db-rover -p 5432; do sleep 2; done"]
+      containers:
+        - name: backend-rover
+          image: backend-rover:latest
+          imagePullPolicy: Never
+          command: ["sh", "-c"]
+          args:
+            - |
+              mix ecto.create --quiet; mix ecto.migrate && exec elixir \
+              --name backend_rover@${POD_NAME}.backend-rover.${POD_NAMESPACE}.svc.cluster.local \
+              --cookie "${RELEASE_COOKIE}" \
+              --erl "-proto_dist inet_tls -ssl_dist_optfile /tls/ssl_dist.conf -kernel inet_dist_listen_min 9000 inet_dist_listen_max 9000" \
+              -S mix phx.server
+          env:
+            - { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
+            - { name: POD_NAMESPACE, valueFrom: { fieldRef: { fieldPath: metadata.namespace } } }
+            - { name: RELEASE_COOKIE, valueFrom: { secretKeyRef: { name: erl-cookie, key: cookie } } }
+            - { name: ROVER1_POSTGRES_USER, valueFrom: { secretKeyRef: { name: db-rover, key: user } } }
+            - { name: ROVER1_POSTGRES_PASSWORD, valueFrom: { secretKeyRef: { name: db-rover, key: password } } }
+            - { name: ROVER1_POSTGRES_DB, valueFrom: { secretKeyRef: { name: db-rover, key: db } } }
+            - { name: ROVER1_DB_HOST, value: db-rover }
+          volumeMounts:
+            - { name: certs, mountPath: /certs, readOnly: true }
+            - { name: ssl-dist, mountPath: /tls, readOnly: true }
+
+      volumes:
+        - name: certs
+          secret: { secretName: tls-rover }
+        - name: ssl-dist
+          configMap: { name: ssl-dist }
+
+              
