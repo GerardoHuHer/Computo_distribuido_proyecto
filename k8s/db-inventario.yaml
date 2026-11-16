@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-inventario
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: db-inventario }
+  template:
+    metadata:
+      labels:
+        { app: db-inventario }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - { name: POSTGRES_USER, valueFrom: { secretKeyRef: { name: db-inventario, key: user } } }
+            - { name: POSTGRES_PASSWORD, valueFrom: { secretKeyRef: { name: db-inventario, key: password } } }
+            - { name: POSTGRES_DB, valueFrom: { secretKeyRef: { name: db-inventario, key: db } } }
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql }
+      volumes:
+        - name: data
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-inventario
+spec:
+  selector: { app: db-inventario }
+  ports:
+    - { port: 5432, targetPort: 5432 }
