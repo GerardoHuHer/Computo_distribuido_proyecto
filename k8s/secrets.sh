@@ -42,4 +42,7 @@ kubectl create secret generic db-inventario \
   --from-literal=password=password \
   --from-literal=db=db_inventario
 
+kubectl create secret generic phx-secret \
+  --from-literal=secret_key_base="$(openssl rand -base64 64 | tr -d '\n')"
+
 kubectl create configmap ssl-dist --from-file=k8s/ssl_dist.conf
