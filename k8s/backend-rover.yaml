@@ -18,7 +18,7 @@ metadata:
   name: backend-rover
 spec:
   serviceName: backend-rover
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels: { app: backend-rover }
   template:
@@ -34,18 +34,11 @@ spec:
         - name: backend-rover
           image: backend-rover:latest
           imagePullPolicy: Never
-          command: ["sh", "-c"]
-          args:
-            - |
-              mix ecto.create --quiet; mix ecto.migrate && exec elixir \
-              --name backend_rover@${POD_NAME}.backend-rover.${POD_NAMESPACE}.svc.cluster.local \
-              --cookie "${RELEASE_COOKIE}" \
-              --erl "-proto_dist inet_tls -ssl_dist_optfile /tls/ssl_dist.conf -kernel inet_dist_listen_min 9000 inet_dist_listen_max 9000" \
-              -S mix phx.server
           env:
             - { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
             - { name: POD_NAMESPACE, valueFrom: { fieldRef: { fieldPath: metadata.namespace } } }
             - { name: RELEASE_COOKIE, valueFrom: { secretKeyRef: { name: erl-cookie, key: cookie } } }
+            - { name: SECRET_KEY_BASE, valueFrom: { secretKeyRef: { name: phx-secret, key: secret_key_base } } }
             - { name: ROVER1_POSTGRES_USER, valueFrom: { secretKeyRef: { name: db-rover, key: user } } }
             - { name: ROVER1_POSTGRES_PASSWORD, valueFrom: { secretKeyRef: { name: db-rover, key: password } } }
             - { name: ROVER1_POSTGRES_DB, valueFrom: { secretKeyRef: { name: db-rover, key: db } } }

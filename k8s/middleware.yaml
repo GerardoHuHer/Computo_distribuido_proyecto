@@ -41,18 +41,11 @@ spec:
         - name: middleware
           image: middleware:latest
           imagePullPolicy: Never
-          command: ["sh", "-c"]
-          args:
-            - |
-              exec elixir \
-              --name middleware@${POD_NAME}.middleware.${POD_NAMESPACE}.svc.cluster.local \
-              --cookie "${RELEASE_COOKIE}" \
-              --erl "-proto_dist inet_tls -ssl_dist_optfile /tls/ssl_dist.conf -kernel inet_dist_listen_min 9000 inet_dist_listen_max 9000" \
-              -S mix phx.server
           env:
             - { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }  
             - { name: POD_NAMESPACE, valueFrom: { fieldRef: { fieldPath: metadata.namespace } } }  
             - { name: RELEASE_COOKIE, valueFrom: { secretKeyRef: { name: erl-cookie, key: cookie } } }  
+            - { name: SECRET_KEY_BASE, valueFrom: { secretKeyRef: { name: phx-secret, key: secret_key_base } } }
           ports:
             - {containerPort: 4000}
           volumeMounts:
