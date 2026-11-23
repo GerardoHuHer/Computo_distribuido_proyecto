@@ -54,7 +54,8 @@ defmodule Rover.MixProject do
       {:bandit, "~> 1.5"},
       {:nimble_csv, "~> 1.2"},
       {:libcluster, "~> 3.5.0"},
-      {:gen_stage, "~> 1.2"}
+      {:gen_stage, "~> 1.2"},
+      {:observability, path: "../observability"}
     ]
   end
 
