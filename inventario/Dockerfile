@@ -5,15 +5,16 @@ WORKDIR /app
 ENV MIX_ENV=prod
 RUN mix local.hex --force && mix local.rebar --force
 
-COPY mix.exs mix.lock ./
+COPY observability /observability
+COPY inventario/mix.exs inventario/mix.lock ./
 RUN mix deps.get --only prod
-COPY config/config.exs config/prod.exs config/
+COPY inventario/config/config.exs inventario/config/prod.exs config/
 RUN mix deps.compile
 
-COPY lib lib
-COPY priv priv
-COPY config/runtime.exs config/
-COPY rel rel
+COPY inventario/lib lib
+COPY inventario/priv priv
+COPY inventario/config/runtime.exs config/
+COPY inventario/rel rel
 RUN mix compile && mix release
 
 FROM debian:trixie-slim
