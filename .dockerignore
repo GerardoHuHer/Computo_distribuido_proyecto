@@ -1,0 +1,9 @@
+.git
+**/_build
+**/deps
+**/.elixir_ls
+**/cover
+**/erl_crash.dump
+certs
+infrastructure
+central_front/node_modules
