@@ -1,7 +1,6 @@
 import Config
 
-config :inventario, InventarioWeb.Endpoint,
-  check_origin: false
+config :inventario, InventarioWeb.Endpoint, check_origin: false
 
 # Configure Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Req
