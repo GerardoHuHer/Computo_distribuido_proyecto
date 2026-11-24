@@ -1,5 +1,6 @@
 defmodule Rover.Cola.Consumidor do
   use GenStage
+  require Logger
 
   alias RoverWeb.RpcHandler
 
@@ -60,6 +61,7 @@ defmodule Rover.Cola.Consumidor do
   end
 
   def atender({%{"action" => action} = payload, from}) do
+    Logger.metadata(type: "rover", action: action)
     inicio = System.monotonic_time()
 
     resultado =

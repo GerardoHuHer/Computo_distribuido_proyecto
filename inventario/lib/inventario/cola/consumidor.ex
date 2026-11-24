@@ -1,5 +1,6 @@
 defmodule Inventario.Cola.Consumidor do
   use GenStage
+  require Logger
 
   alias InventarioWeb.RpcHandler
 
@@ -60,6 +61,7 @@ defmodule Inventario.Cola.Consumidor do
   end
 
   def atender({%{"action" => action} = payload, from}) do
+    Logger.metadata(type: "inventario", action: action)
     inicio = System.monotonic_time()
 
     resultado =

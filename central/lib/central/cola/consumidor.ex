@@ -1,5 +1,6 @@
 defmodule Central.Cola.Consumidor do
   use GenStage
+  require Logger
 
   alias CentralWeb.RpcHandler
 
@@ -60,6 +61,7 @@ defmodule Central.Cola.Consumidor do
   end
 
   def atender({%{"action" => action} = payload, from}) do
+    Logger.metadata(type: "central", action: action)
     inicio = System.monotonic_time()
 
     resultado =
