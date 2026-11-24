@@ -23,6 +23,7 @@ defmodule Middleware.Application do
       # Start a worker by calling: Middleware.Worker.start_link(arg)
       # {Middleware.Worker, arg},
       # Start to serve requests, typically the last entry
+      {Observability.Supervisor, metrics: Middleware.Metrics.custom()},
       MiddlewareWeb.Endpoint
     ]
 

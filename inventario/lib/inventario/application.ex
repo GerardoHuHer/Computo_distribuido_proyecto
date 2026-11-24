@@ -13,6 +13,8 @@ defmodule Inventario.Application do
       {Cluster.Supervisor, [topologies, [name: Inventario.ClusterSupervisor]]},
       InventarioWeb.Telemetry,
       Inventario.Repo,
+      {Observability.Supervisor,
+       repo_prefix: "inventario.repo", metrics: Observability.Metrics.consumidor(:inventario)},
       Inventario.Cola.Consumidor,
       {DNSCluster, query: Application.get_env(:inventario, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Inventario.PubSub},

@@ -13,6 +13,8 @@ defmodule Central.Application do
       {Cluster.Supervisor, [topologies, [name: Central.ClusterSupervisor]]},
       CentralWeb.Telemetry,
       Central.Repo,
+      {Observability.Supervisor,
+       repo_prefix: "central.repo", metrics: Observability.Metrics.consumidor(:central)},
       Central.Cola.Consumidor,
       {DNSCluster, query: Application.get_env(:central, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Central.PubSub},

@@ -13,6 +13,8 @@ defmodule Rover.Application do
       {Cluster.Supervisor, [topologies, [name: Rover.ClusterSupervisor]]},
       RoverWeb.Telemetry,
       Rover.Repo,
+      {Observability.Supervisor,
+       repo_prefix: "rover.repo", metrics: Observability.Metrics.consumidor(:rover)},
       Rover.Cola.Consumidor,
       Rover.GenerateEvento,
       {DNSCluster, query: Application.get_env(:rover, :dns_cluster_query) || :ignore},
