@@ -51,18 +51,29 @@ defmodule Central.Cola.Consumidor do
       timeout: 10_000,
       on_timeout: :kill_task
     )
-    |> Stream.run()
+    |> Enum.each(fn
+      {:exit, :timeout} -> :telemetry.execute([:central, :cola, :timeout], %{count: 1}, %{})
+      _ -> :ok
+    end)
 
     {:noreply, [], estado}
   end
 
   def atender({%{"action" => action} = payload, from}) do
+    inicio = System.monotonic_time()
+
     resultado =
       try do
         RpcHandler.handle_request(action, Map.get(payload, "params", %{}))
       rescue
         e -> {:error, Exception.message(e)}
       end
+
+    :telemetry.execute(
+      [:central, :cola, :atender, :stop],
+      %{duration: System.monotonic_time() - inicio},
+      %{action: action, resultado: if(match?({:ok, _}, resultado), do: :ok, else: :error)}
+    )
 
     GenStage.reply(from, resultado)
   end
