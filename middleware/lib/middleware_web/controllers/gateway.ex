@@ -2,6 +2,22 @@ defmodule MiddlewareWeb.Gateway do
   use MiddlewareWeb, :controller
 
   def gateway(conn, payload) do
+    inicio = System.monotonic_time()
+    conn = procesar(conn, payload)
+
+    :telemetry.execute(
+      [:middleware, :gateway, :stop],
+      %{duration: System.monotonic_time() - inicio},
+      %{type: etiqueta(payload["type"]), action: etiqueta(payload["action"]), status: conn.status}
+    )
+
+    conn
+  end
+
+  defp etiqueta(valor) when is_binary(valor), do: valor
+  defp etiqueta(_valor), do: "invalido"
+
+  defp procesar(conn, payload) do
     with :ok <- validar_payload(payload) do
       payload = Map.put_new(payload, "params", %{})
 

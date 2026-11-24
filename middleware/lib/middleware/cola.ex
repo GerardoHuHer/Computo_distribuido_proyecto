@@ -10,7 +10,7 @@ defmodule Middleware.Cola do
   }
 
   def start_link(tipo) do
-    GenStage.start_link(__MODULE__, :ok, name: Map.fetch!(@colas, tipo))
+    GenStage.start_link(__MODULE__, tipo, name: Map.fetch!(@colas, tipo))
   end
 
   def child_spec(tipo) do
@@ -25,12 +25,13 @@ defmodule Middleware.Cola do
   end
 
   @impl true
-  def init(:ok) do
-    {:producer, %{cola: :queue.new(), pendientes: 0, demanda: 0}}
+  def init(tipo) do
+    {:producer, %{tipo: tipo, cola: :queue.new(), pendientes: 0, demanda: 0}}
   end
 
   @impl true
   def handle_call({:encolar, _payload}, _from, %{pendientes: p} = estado) when p >= @max_cola do
+    :telemetry.execute([:middleware, :cola, :rechazo], %{count: 1}, %{tipo: estado.tipo})
     {:reply, {:error, :sobrecargado}, [], estado}
   end
 
@@ -54,6 +55,12 @@ defmodule Middleware.Cola do
     n = min(demanda, pendientes)
     # Dividimos la cola basado en el mínimo anterior para saber que podemos mandar
     {sacados, resto} = :queue.split(n, cola)
+
+    :telemetry.execute(
+      [:middleware, :cola, :estado],
+      %{pendientes: pendientes - n},
+      %{tipo: estado.tipo}
+    )
 
     {:noreply, :queue.to_list(sacados),
      %{estado | cola: resto, demanda: demanda - n, pendientes: pendientes - n}}
