@@ -1,7 +1,9 @@
 defmodule MiddlewareWeb.Gateway do
   use MiddlewareWeb, :controller
+  require Logger
 
   def gateway(conn, payload) do
+    Logger.metadata(type: etiqueta(payload["type"]), action: etiqueta(payload["action"]))
     inicio = System.monotonic_time()
     conn = procesar(conn, payload)
 
