@@ -24,6 +24,7 @@ spec:
   template:
     metadata:
       labels: { app: backend-inventario }
+      annotations: { prometheus.io/scrape: "true", prometheus.io/port: "4000" }
     spec:
       serviceAccountName: erl-cluster
       initContainers:
