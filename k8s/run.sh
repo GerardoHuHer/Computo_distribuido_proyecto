@@ -24,6 +24,7 @@ bash k8s/secrets.sh
 
 # Despliegue
 kubectl apply -f k8s/rbac.yaml -f k8s/db-central.yaml -f k8s/db-rover.yaml -f k8s/db-inventario.yaml
+kubectl apply -f k8s/jaeger.yaml
 kubectl apply -f k8s/middleware.yaml
 kubectl wait --for=condition=Ready pod/middleware-0 --timeout=300s
 kubectl apply -f k8s/backend-central.yaml -f k8s/backend-rover.yaml -f k8s/backend-inventario.yaml -f k8s/frontend.yaml
