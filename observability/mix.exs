@@ -28,7 +28,12 @@ defmodule Observability.MixProject do
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:telemetry_metrics_prometheus_core, "~> 1.0"},
-      {:logger_json, "~> 7.0"}
-    ]
+      {:logger_json, "~> 7.0"},
+      {:opentelemetry_exporter, "~> 1.11"},
+      {:opentelemetry, "~> 1.7"},
+      {:opentelemetry_api, "~> 1.5"},
+      {:opentelemetry_bandit, "~> 0.3.0"},
+      {:opentelemetry_phoenix, "~> 2.0"},
+      {:opentelemetry_ecto, "~> 1.2"}    ]
   end
 end

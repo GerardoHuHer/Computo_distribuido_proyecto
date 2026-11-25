@@ -10,6 +10,9 @@ defmodule Central.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      releases: [
+        central: [applications: [opentelemetry_exporter: :permanent, opentelemetry: :temporary]]
+      ],
       listeners: [Phoenix.CodeReloader]
     ]
   end

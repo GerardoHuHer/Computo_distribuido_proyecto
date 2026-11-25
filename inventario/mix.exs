@@ -10,6 +10,9 @@ defmodule Inventario.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      releases: [
+        inventario: [applications: [opentelemetry_exporter: :permanent, opentelemetry: :temporary]]
+      ],
       listeners: [Phoenix.CodeReloader]
     ]
   end
