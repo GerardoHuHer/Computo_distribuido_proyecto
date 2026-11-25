@@ -7,6 +7,7 @@ defmodule Central.Application do
 
   @impl true
   def start(_type, _args) do
+    Observability.Trace.setup(repo: [:central, :repo])
     topologies = Application.get_env(:libcluster, :topologies) || []
 
     children = [

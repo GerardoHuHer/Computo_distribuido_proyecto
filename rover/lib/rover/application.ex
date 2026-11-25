@@ -7,6 +7,7 @@ defmodule Rover.Application do
 
   @impl true
   def start(_type, _args) do
+    Observability.Trace.setup(repo: [:rover, :repo])
     topologies = Application.get_env(:libcluster, :topologies) || []
 
     children = [

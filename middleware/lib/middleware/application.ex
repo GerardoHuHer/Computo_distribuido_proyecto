@@ -7,6 +7,7 @@ defmodule Middleware.Application do
 
   @impl true
   def start(_type, _args) do
+    Observability.Trace.setup()
     topologies = Application.get_env(:libcluster, :topologies) || []
 
     children = [
