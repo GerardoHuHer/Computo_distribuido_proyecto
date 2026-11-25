@@ -44,6 +44,10 @@ spec:
           imagePullPolicy: Never
           env:
             - { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }  
+            - { name: OTEL_SERVICE_NAME, value: middleware }
+            - { name: OTEL_EXPORTER_OTLP_ENDPOINT, value: "http://jaeger:4318" }
+            - { name: OTEL_EXPORTER_OTLP_PROTOCOL, value: http_protobuf }
+            - { name: OTEL_RESOURCE_ATTRIBUTES, value: "k8s.pod.name=$(POD_NAME)" }
             - { name: POD_NAMESPACE, valueFrom: { fieldRef: { fieldPath: metadata.namespace } } }  
             - { name: RELEASE_COOKIE, valueFrom: { secretKeyRef: { name: erl-cookie, key: cookie } } }  
             - { name: SECRET_KEY_BASE, valueFrom: { secretKeyRef: { name: phx-secret, key: secret_key_base } } }
