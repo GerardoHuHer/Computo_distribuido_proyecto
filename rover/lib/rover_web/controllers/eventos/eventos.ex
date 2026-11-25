@@ -2,11 +2,10 @@ defmodule RoverWeb.Eventos do
   use RoverWeb, :controller
   alias Rover.Eventos
 
-  @path Path.join(File.cwd!(), "eventos.csv")
   @cantidad_registros 100
 
   def load_eventos_db_controller(conn, _params) do
-    data = load_data_from_csv(@path)
+    data = load_data_from_csv(csv_path())
 
     case Eventos.post_all_data(data) do
       {:ok, cantidad} ->
@@ -36,6 +35,8 @@ defmodule RoverWeb.Eventos do
         |> render(:show, evento: evento)
     end
   end
+
+  defp csv_path, do: Application.app_dir(:rover, "priv/eventos.csv")
 
   defp load_data_from_csv(path) do
     now =

@@ -10,6 +10,9 @@ defmodule Middleware.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      releases: [
+        middleware: [applications: [opentelemetry_exporter: :permanent, opentelemetry: :temporary]]
+      ],
       listeners: [Phoenix.CodeReloader]
     ]
   end
@@ -53,7 +56,10 @@ defmodule Middleware.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:libcluster, "~> 3.5.0"},
-      {:gen_stage, "~> 1.2"}
+      {:gen_stage, "~> 1.2"},
+      # Observability
+      {:observability, path: "../observability"}
+
     ]
   end
 

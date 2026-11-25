@@ -3,7 +3,6 @@ NimbleCSV.define(MyParser, separator: ",", escape: "\"")
 defmodule RoverWeb.Handlers.EventosHandler do
   alias Rover.Vehiculo
   alias Rover.Eventos
-  @path Path.join(File.cwd!(), "eventos.csv")
   @cantidad_registros 100
 
   def handle_request("get_evento_random", _params) do
@@ -34,7 +33,7 @@ defmodule RoverWeb.Handlers.EventosHandler do
   def handle_request("load_eventos_db", _params) do
     case Eventos.get_len_evento() do
       0 ->
-        data = load_data_from_csv(@path)
+        data = load_data_from_csv(csv_path())
 
         case Eventos.post_all_data(data) do
           {:ok, cantidad} ->
@@ -48,6 +47,8 @@ defmodule RoverWeb.Handlers.EventosHandler do
         {:ok, %{"msg" => "Ya están cargados los eventos"}}
     end
   end
+
+  defp csv_path, do: Application.app_dir(:rover, "priv/eventos.csv")
 
   defp load_data_from_csv(path) do
     now =

@@ -7,12 +7,15 @@ defmodule Inventario.Application do
 
   @impl true
   def start(_type, _args) do
+    Observability.Trace.setup(repo: [:inventario, :repo])
     topologies = Application.get_env(:libcluster, :topologies) || []
 
     children = [
       {Cluster.Supervisor, [topologies, [name: Inventario.ClusterSupervisor]]},
       InventarioWeb.Telemetry,
       Inventario.Repo,
+      {Observability.Supervisor,
+       repo_prefix: "inventario.repo", metrics: Observability.Metrics.consumidor(:inventario)},
       Inventario.Cola.Consumidor,
       {DNSCluster, query: Application.get_env(:inventario, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Inventario.PubSub},

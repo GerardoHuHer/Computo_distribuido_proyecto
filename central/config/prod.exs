@@ -1,7 +1,6 @@
 import Config
 
-config :central, CentralWeb.Endpoint,
-  check_origin: false
+config :central, CentralWeb.Endpoint, check_origin: false
 
 # Configure Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Req

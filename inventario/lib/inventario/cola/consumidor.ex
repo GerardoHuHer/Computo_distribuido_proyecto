@@ -1,5 +1,6 @@
 defmodule Inventario.Cola.Consumidor do
   use GenStage
+  require Logger
 
   alias InventarioWeb.RpcHandler
 
@@ -51,20 +52,35 @@ defmodule Inventario.Cola.Consumidor do
       timeout: 10_000,
       on_timeout: :kill_task
     )
-    |> Stream.run()
+    |> Enum.each(fn
+      {:exit, :timeout} -> :telemetry.execute([:inventario, :cola, :timeout], %{count: 1}, %{})
+      _ -> :ok
+    end)
 
     {:noreply, [], estado}
   end
 
   def atender({%{"action" => action} = payload, from}) do
-    resultado =
-      try do
-        RpcHandler.handle_request(action, Map.get(payload, "params", %{}))
-      rescue
-        e -> {:error, Exception.message(e)}
-      end
+    Logger.metadata(type: "inventario", action: action)
 
-    GenStage.reply(from, resultado)
+    Observability.Trace.with_span("inventario.atender", payload, %{action: action}, fn ->
+      inicio = System.monotonic_time()
+
+      resultado =
+        try do
+          RpcHandler.handle_request(action, Map.get(payload, "params", %{}))
+        rescue
+          e -> {:error, Exception.message(e)}
+        end
+
+      :telemetry.execute(
+        [:inventario, :cola, :atender, :stop],
+        %{duration: System.monotonic_time() - inicio},
+        %{action: action, resultado: if(match?({:ok, _}, resultado), do: :ok, else: :error)}
+      )
+
+      GenStage.reply(from, resultado)
+    end)
   end
 
   defp buscar_middleware do

@@ -60,6 +60,12 @@ config :libcluster,
 if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  config :logger, :default_handler,
+    formatter:
+      LoggerJSON.Formatters.Basic.new(
+        metadata: [:request_id, :type, :action, :otel_trace_id, :otel_span_id]
+      )
+
   config :inventario, Inventario.Repo,
     # ssl: true,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),

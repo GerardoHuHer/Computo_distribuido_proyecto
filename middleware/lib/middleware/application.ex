@@ -7,6 +7,7 @@ defmodule Middleware.Application do
 
   @impl true
   def start(_type, _args) do
+    Observability.Trace.setup()
     topologies = Application.get_env(:libcluster, :topologies) || []
 
     children = [
@@ -23,6 +24,7 @@ defmodule Middleware.Application do
       # Start a worker by calling: Middleware.Worker.start_link(arg)
       # {Middleware.Worker, arg},
       # Start to serve requests, typically the last entry
+      {Observability.Supervisor, metrics: Middleware.Metrics.custom()},
       MiddlewareWeb.Endpoint
     ]
 

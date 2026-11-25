@@ -7,12 +7,15 @@ defmodule Rover.Application do
 
   @impl true
   def start(_type, _args) do
+    Observability.Trace.setup(repo: [:rover, :repo])
     topologies = Application.get_env(:libcluster, :topologies) || []
 
     children = [
       {Cluster.Supervisor, [topologies, [name: Rover.ClusterSupervisor]]},
       RoverWeb.Telemetry,
       Rover.Repo,
+      {Observability.Supervisor,
+       repo_prefix: "rover.repo", metrics: Observability.Metrics.consumidor(:rover)},
       Rover.Cola.Consumidor,
       Rover.GenerateEvento,
       {DNSCluster, query: Application.get_env(:rover, :dns_cluster_query) || :ignore},
