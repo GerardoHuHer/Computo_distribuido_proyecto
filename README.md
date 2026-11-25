@@ -9,6 +9,7 @@ A distributed system that emulates a space rover control center. It was built fo
 - CI/CD: Jenkins running in a container.
 - Orchestration: Kubernetes manifests (minikube) with mutual TLS between the Erlang nodes.
 - Infrastructure: Vagrant (libvirt) definitions for three Kali Linux virtual machines.
+- Observability: Prometheus metrics, structured JSON logs and OpenTelemetry traces exported to Jaeger (Kubernetes deployment).
 
 ---
 
@@ -25,8 +26,9 @@ A distributed system that emulates a space rover control center. It was built fo
 9. [Scaling and Load Balancing](#scaling-and-load-balancing)
 10. [Testing](#testing)
 11. [Kubernetes Deployment (minikube + TLS)](#kubernetes-deployment-minikube--tls)
-12. [Infrastructure](#infrastructure)
-13. [Project Structure](#project-structure)
+12. [Observability](#observability)
+13. [Infrastructure](#infrastructure)
+14. [Project Structure](#project-structure)
 
 ---
 
@@ -275,7 +277,7 @@ The whole system can run on a local Kubernetes cluster (minikube). All traffic b
 |---|---|
 | Linux x86_64 | The commands below target Fedora and Debian/Ubuntu. For ARM, replace `amd64` with `arm64` in the download URLs. |
 | Docker | Engine running, with your user in the `docker` group. minikube uses it as its driver. |
-| minikube | Created by the scripts with 2 CPUs and 4 GB of RAM. |
+| minikube | Created by `k8s/run.sh` with 6 GB of RAM and the default 2 CPUs. |
 | kubectl | Any recent version. |
 | openssl | Used by `cert.sh` to generate the certificates. |
 | git, curl | To clone the repository and download the binaries. |
@@ -362,11 +364,11 @@ The script runs these stages, in order:
 
 1. Generates the certificates with `cert.sh` if `certs/` does not exist.
 2. Starts minikube and waits for the node to be ready.
-3. Builds the five images inside minikube (`minikube image build`).
+3. Builds the five images inside minikube (`minikube image build`). The four Elixir images are built with the repository root as build context (`-f <service>/Dockerfile .`), so the shared `observability/` library is available during the build.
 4. Recreates the Secrets and the `ssl-dist` ConfigMap with `k8s/secrets.sh`.
-5. Applies the manifests in order: RBAC, databases, middleware, backends and frontend.
+5. Applies the manifests in order: RBAC, databases, Jaeger, middleware, backends, frontend and Prometheus.
 
-The first run takes several minutes: the images have to be built and each Elixir pod compiles the project on startup (dev mode). Check the progress with:
+The Elixir images are multi-stage builds: the first stage compiles an Elixir release (`MIX_ENV=prod`) and the final image only contains that release. The first run takes several minutes because every dependency has to be downloaded and compiled; later builds reuse the Docker cache and the pods start in a few seconds. Check the progress with:
 
 ```
 kubectl get pods
@@ -429,8 +431,10 @@ All manifests live in `k8s/`.
 | `rbac.yaml` | ServiceAccount, Role and RoleBinding so `libcluster` can read the endpoints. |
 | `db-central.yaml`, `db-rover.yaml`, `db-inventario.yaml` | One PostgreSQL Deployment and Service per backend. Data is stored in an `emptyDir`, so it is lost when the pod is recreated. |
 | `middleware.yaml` | StatefulSet, headless Service `middleware` (cluster DNS) and Service `middleware-http` (HTTP). |
-| `backend-central.yaml`, `backend-rover.yaml`, `backend-inventario.yaml` | A StatefulSet and a headless Service per backend. An init container waits for the database. |
+| `backend-central.yaml`, `backend-rover.yaml`, `backend-inventario.yaml` | A StatefulSet with three replicas and a headless Service per backend. An init container waits for the database. |
 | `frontend.yaml` | Nginx Deployment and NodePort Service. |
+| `prometheus.yaml` | Prometheus Deployment and Service, its configuration (ConfigMap) and the ClusterRole it needs to discover pods. See [Observability](#observability). |
+| `jaeger.yaml` | Jaeger Deployment and Service (OTLP receiver and UI). See [Observability](#observability). |
 | `ssl_dist.conf` | Erlang TLS options. |
 | `secrets.sh` | Creates the Secrets and the ConfigMap. |
 | `run.sh` | Runs the whole deployment. |
@@ -459,7 +463,7 @@ kubectl rollout restart statefulset/middleware statefulset/backend-central \
 | `hostname_check_failed` in a pod log | The pod name is not in the certificate SAN. Regenerate the certificates. |
 | `forbidden` from `libcluster` | `k8s/rbac.yaml` was not applied. |
 | A backend restarts at first | The database is not ready yet. The init container waits for it. |
-| Pods take a while to start | Dev mode: every pod compiles the project on startup (about two minutes). |
+| The first `run.sh` takes a long time | Each Elixir image compiles a release with all its dependencies. Later builds reuse the Docker cache. |
 | `permission denied` running `docker` | Your user is not in the `docker` group, or you have not logged in again. |
 
 ### Tear down
@@ -467,6 +471,209 @@ kubectl rollout restart statefulset/middleware statefulset/backend-central \
 ```
 minikube delete
 ```
+
+## Observability
+
+The Kubernetes deployment exposes the three observability signals. Prometheus and Jaeger run inside the cluster next to the services.
+
+| Signal | Implementation | Where to look |
+|---|---|---|
+| Metrics | `telemetry` + `telemetry_metrics_prometheus_core`, scraped by Prometheus | Prometheus UI |
+| Logs | `Logger` with the `logger_json` formatter, one JSON object per line on stdout | `kubectl logs` |
+| Traces | OpenTelemetry SDK, exported over OTLP/HTTP to Jaeger | Jaeger UI |
+
+```
+                    scrape GET /metrics (every 10 s)
+   Prometheus  <-------------------------------------+
+                                                     |
+   Jaeger  <---- OTLP/HTTP :4318 (spans) ----+       |
+                                             |       |
+                                   middleware-0, backend-*-0..2
+                                             |
+   kubectl logs  <---- JSON on stdout -------+
+```
+
+### Shared library
+
+All the instrumentation lives in `observability/`, a plain Mix project that the four Elixir services use as a path dependency (`{:observability, path: "../observability"}`). The logic is written once and every service gets the same metrics, log format and trace propagation.
+
+| Module | Purpose |
+|---|---|
+| `Observability.Metrics` | Metric definitions shared by every service: Phoenix, BEAM VM, Ecto queries and the backend queue consumers. |
+| `Observability.Supervisor` | Starts the Prometheus reporter with the shared metrics plus the ones each service adds. |
+| `Observability.MetricsPlug` | Answers `GET /metrics` in the Prometheus text format. |
+| `Observability.Trace` | Enables the automatic instrumentation (`setup/1`) and propagates the trace context through the queues (`inject/1`, `with_span/4`). |
+| `Observability.Sampler` | OpenTelemetry sampler that drops the spans of `GET /metrics`, so Prometheus scrapes do not fill Jaeger. |
+
+How each service uses it:
+
+| File | Change |
+|---|---|
+| `mix.exs` | Path dependency, and a `releases` entry that starts `opentelemetry_exporter` before `opentelemetry` and marks the latter as `:temporary`, so a tracing failure never stops the node. |
+| `lib/<app>/application.ex` | Calls `Observability.Trace.setup/1` before starting the supervision tree and starts `Observability.Supervisor`. |
+| `lib/<app>_web/endpoint.ex` | `plug Observability.MetricsPlug`. |
+| `config/config.exs` | Selects `Observability.Sampler` as the root sampler. |
+| `config/runtime.exs` | JSON log formatter, only in `prod`. |
+| `config/dev.exs`, `config/test.exs` | `traces_exporter: :none`, so local runs do not try to reach Jaeger. |
+
+### Metrics
+
+Every Elixir pod serves its metrics at `GET /metrics` on its HTTP port (4000). Prometheus discovers the pods through the Kubernetes API and scrapes every pod that has these annotations in its StatefulSet template:
+
+```yaml
+annotations: { prometheus.io/scrape: "true", prometheus.io/port: "4000" }
+```
+
+Each replica is a separate target and carries a `pod` label. The scrape interval is 10 seconds and the data is kept for one day.
+
+Open the UI:
+
+```
+kubectl port-forward svc/prometheus 9090:9090
+```
+
+Browse to `http://localhost:9090`. Under **Status > Targets** the ten Elixir pods (the middleware and three replicas of each backend) should be **UP**. If the Jenkins container is running it already uses port 9090 on the host; forward to another local port instead (`19090:9090`).
+
+#### Metric reference
+
+| Metric | Type | Labels | Emitted by |
+|---|---|---|---|
+| `middleware_gateway_stop_duration` | histogram (ms) | `type`, `action`, `status` | `MiddlewareWeb.Gateway`, one observation per request |
+| `middleware_cola_estado_pendientes` | gauge | `tipo` | `Middleware.Cola`, requests waiting in each queue |
+| `middleware_cola_rechazo_count` | counter | `tipo` | `Middleware.Cola`, requests rejected because the queue was full |
+| `<app>_cola_atender_stop_count` | counter | `action`, `resultado` | Backend consumers (`rover`, `inventario`, `central`), requests handled per pod |
+| `<app>_cola_atender_stop_duration` | histogram (ms) | `action` | Backend consumers, time spent handling a request |
+| `<app>_cola_timeout_count` | counter | none | Backend consumers, tasks killed after 10 seconds |
+| `<app>_repo_query_total_time` | histogram (ms) | none | Ecto, every database query (backends only) |
+| `phoenix_router_dispatch_stop_duration` | histogram (ms) | `route` | Phoenix |
+| `phoenix_router_dispatch_exception_count` | counter | `route` | Phoenix |
+| `vm_memory_total`, `vm_total_run_queue_lengths_*`, `vm_system_counts_process_count` | gauge | none | `telemetry_poller` |
+
+A histogram is stored as three series: `_bucket`, `_sum` and `_count`. Querying the base name (for example `middleware_gateway_stop_duration`) returns nothing.
+
+#### Useful queries
+
+| Question | PromQL |
+|---|---|
+| Total requests through the gateway | `sum(middleware_gateway_stop_duration_count)` |
+| Requests per second | `sum(rate(middleware_gateway_stop_duration_count[1m]))` |
+| Requests per backend type | `sum by (type) (middleware_gateway_stop_duration_count)` |
+| Requests per backend pod | `sum by (pod) ({__name__=~"(rover\|inventario\|central)_cola_atender_stop_count"})` |
+| Failed requests (gateway) | `sum by (type, action, status) (middleware_gateway_stop_duration_count{status!~"2.."})` |
+| Failed requests (backends) | `sum by (pod, action) ({__name__=~"(rover\|inventario\|central)_cola_atender_stop_count", resultado="error"})` |
+| Timeouts | `sum by (pod) ({__name__=~"(rover\|inventario\|central)_cola_timeout_count"})` |
+| Rejections because of a full queue | `sum by (tipo) (middleware_cola_rechazo_count)` |
+| Gateway latency, 95th percentile | `histogram_quantile(0.95, sum by (le, type) (rate(middleware_gateway_stop_duration_bucket[5m])))` |
+
+Counters are cumulative since the pod started. Wrap them in `increase(...[15m])` to count only a time window.
+
+The backend counters also include requests that do not go through the gateway, such as the events `Rover.GenerateEvento` sends to Central every minute.
+
+### Logs
+
+In the `prod` environment (the releases running in Kubernetes) every service writes one JSON object per line to stdout. The formatter is configured in `config/runtime.exs`; local `dev` runs keep the plain text format.
+
+```json
+{"message":"Sent 200 in 20ms","time":"2026-11-24T05:23:06.854Z","severity":"info","trace":"446385551e9918d958b78f08f1b25d12","span":"69c0063e45e778c8","metadata":{"type":"central","action":"update_event","request_id":"GOrjuWMzoyM76B8AABzI"}}
+```
+
+| Field | Origin |
+|---|---|
+| `request_id` | `Plug.RequestId`, one per HTTP request to the middleware |
+| `type`, `action` | Set with `Logger.metadata/1` in the gateway and in every backend consumer |
+| `trace`, `span` | The active OpenTelemetry span. Paste `trace` in **Lookup by Trace ID** in Jaeger to open the trace of that log line |
+
+Read the logs:
+
+```
+kubectl logs middleware-0 | grep '^{' | jq -c '{severity, message, trace, metadata}'
+```
+
+The `grep '^{'` skips a few `=ESOCK WARNING` lines that the Erlang socket module prints on startup because `libsctp` is not installed in the image. They do not go through `Logger` and are harmless.
+
+### Traces
+
+Each service runs the OpenTelemetry SDK and sends its spans to Jaeger. The automatic instrumentation creates spans for every HTTP request (`opentelemetry_bandit`, `opentelemetry_phoenix`) and every database query (`opentelemetry_ecto`).
+
+#### Context propagation through the queues
+
+A request crosses three process boundaries before it reaches the database: the middleware queue (`GenStage.call`), another Erlang node, and the `Task` that runs `atender/1`. OpenTelemetry keeps the active span in the process dictionary, which is private to each process, so the context is lost at each boundary. The request payload is the only thing that travels across all three, so it carries the context:
+
+| Step | Where | What happens |
+|---|---|---|
+| `Observability.Trace.inject/1` | `MiddlewareWeb.Gateway`, before `Middleware.Cola.encolar/2` | Writes the active span as a W3C `traceparent` into `payload["_trace"]` and the enqueue time into `payload["_enq_ts"]`. |
+| `Observability.Trace.with_span/4` | `<App>.Cola.Consumidor.atender/1` | Restores the context from `payload["_trace"]` and opens a `<app>.atender` span (kind `consumer`) as a child of the middleware span. Ecto queries inside it become its children. |
+
+The handlers only read `payload["params"]`, so the two extra keys do not affect them.
+
+A request through the gateway produces a single trace:
+
+```
+middleware  POST /api/gateway
+└─ rover    rover.atender              action=get_vehiculo  queue_wait_ms=2
+   └─ rover rover.repo.query:vehiculo
+```
+
+| Attribute | Meaning |
+|---|---|
+| `action` | Backend action that was executed |
+| `queue_wait_ms` | Time the request waited in the middleware queue |
+| `k8s.pod.name` (resource) | Replica that produced the span |
+
+The events that `Rover.GenerateEvento` sends to Central are enqueued directly over RPC, without `inject/1`, so they appear as separate traces of the `central` service.
+
+#### Configuration
+
+The exporter is configured with the standard OpenTelemetry environment variables in each StatefulSet:
+
+| Variable | Value | Purpose |
+|---|---|---|
+| `OTEL_SERVICE_NAME` | `middleware`, `rover`, `inventario`, `central` | Service name shown in Jaeger |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://jaeger:4318` | Jaeger Service inside the cluster |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http_protobuf` | OTLP over HTTP (the Erlang exporter uses an underscore, not `http/protobuf`) |
+| `OTEL_RESOURCE_ATTRIBUTES` | `k8s.pod.name=$(POD_NAME)` | Identifies the replica |
+
+Jaeger (`jaegertracing/jaeger:2.23.0`) keeps the traces in memory, so they are lost when its pod restarts. Its readiness probe checks `GET /status` on port 13133.
+
+#### Open the UI
+
+```
+kubectl port-forward svc/jaeger 16686:16686
+```
+
+Browse to `http://localhost:16686`, choose the `middleware` service and click **Find Traces**. A `POST /api/gateway` trace should list two services (the middleware and one backend). A trace with a single span and an error is expected for requests with an unsupported `type` (`502`): they are rejected before reaching any backend.
+
+Jaeger 2 serves its HTTP API under `/api/v3` (for example `curl http://localhost:16686/api/v3/services`); the `/api/...` paths of Jaeger 1 return `404`.
+
+### Security scope
+
+The Prometheus scrapes (`/metrics`) and the OTLP export to Jaeger use plain HTTP inside the cluster, like the rest of the internal HTTP traffic. The `traceparent` added to the payload travels between the middleware and the backends over the Erlang distribution, so it is protected by the same mutual TLS as the request itself.
+
+### End-to-end check
+
+```
+kubectl port-forward svc/middleware-http 4002:4000
+MIDDLEWARE_URL=http://localhost:4002 ./test_routes.sh
+```
+
+| Check | Expected |
+|---|---|
+| Prometheus **Status > Targets** | Ten Elixir pods **UP** |
+| `middleware_gateway_stop_duration_count` | One series per `type`, `action` and `status` exercised by the script |
+| `kubectl logs middleware-0 \| grep '^{' \| tail` | JSON lines with `trace` and `metadata.request_id` |
+| Jaeger, service `middleware` | `POST /api/gateway` traces with two services and spans down to the Ecto queries |
+| `test_routes.sh` | `200` for every action, and the expected `502` for the unsupported type |
+
+### Troubleshooting
+
+| Symptom | Cause |
+|---|---|
+| A target is `DOWN` with `connection refused` | The pod is not running or is restarting. Check `kubectl get pods` and its logs. |
+| A query returns no data | Histograms only exist as `_bucket`, `_sum` and `_count`; or the time range of the graph is older than the requests. |
+| Jaeger lists only the `jaeger` service | The images were not rebuilt after the change, or the pods do not have the `OTEL_*` variables (`kubectl exec <pod> -- env \| grep OTEL`). |
+| `GET /metrics` traces in Jaeger | The pods run an image without `Observability.Sampler`. Rebuild and restart. |
+| The backend spans are separate traces | `inject/1` or `with_span/4` is missing, or the payload lost the `_trace` key on its way to the consumer. |
+| `jq` fails on some lines | Lines that are not JSON (`=ESOCK WARNING`). Filter with `grep '^{'`. |
 
 ## Infrastructure
 
@@ -492,6 +699,7 @@ A Terraform proposal for hosting the project is planned.
 ├── rover/              Rover backend (Phoenix)
 ├── inventario/         Inventario backend (Phoenix)
 ├── middleware/         Gateway and load balancer (Phoenix)
+├── observability/      Shared library for metrics, logs and traces
 ├── central_front/      React + Vite frontend served by Nginx
 ├── infrastructure/     Vagrant configuration and provisioning scripts
 ├── k8s/                Kubernetes manifests, TLS options and deployment scripts
