@@ -62,22 +62,25 @@ defmodule Inventario.Cola.Consumidor do
 
   def atender({%{"action" => action} = payload, from}) do
     Logger.metadata(type: "inventario", action: action)
-    inicio = System.monotonic_time()
 
-    resultado =
-      try do
-        RpcHandler.handle_request(action, Map.get(payload, "params", %{}))
-      rescue
-        e -> {:error, Exception.message(e)}
-      end
+    Observability.Trace.with_span("inventario.atender", payload, %{action: action}, fn ->
+      inicio = System.monotonic_time()
 
-    :telemetry.execute(
-      [:inventario, :cola, :atender, :stop],
-      %{duration: System.monotonic_time() - inicio},
-      %{action: action, resultado: if(match?({:ok, _}, resultado), do: :ok, else: :error)}
-    )
+      resultado =
+        try do
+          RpcHandler.handle_request(action, Map.get(payload, "params", %{}))
+        rescue
+          e -> {:error, Exception.message(e)}
+        end
 
-    GenStage.reply(from, resultado)
+      :telemetry.execute(
+        [:inventario, :cola, :atender, :stop],
+        %{duration: System.monotonic_time() - inicio},
+        %{action: action, resultado: if(match?({:ok, _}, resultado), do: :ok, else: :error)}
+      )
+
+      GenStage.reply(from, resultado)
+    end)
   end
 
   defp buscar_middleware do

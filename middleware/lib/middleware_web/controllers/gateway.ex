@@ -21,7 +21,7 @@ defmodule MiddlewareWeb.Gateway do
 
   defp procesar(conn, payload) do
     with :ok <- validar_payload(payload) do
-      payload = Map.put_new(payload, "params", %{})
+      payload = payload |> Map.put_new("params", %{}) |> Observability.Trace.inject()
 
       case Middleware.Cola.encolar(payload, 30_000) do
         {:ok, data} ->
